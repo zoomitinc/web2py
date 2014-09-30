@@ -1,0 +1,1399 @@
+<html>
+<head>
+<title>order.py</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.ln { color: rgb(0,0,0); font-weight: normal; font-style: normal; }
+.s0 { color: rgb(128,128,128); }
+.s1 { color: rgb(169,183,198); }
+.s2 { color: rgb(204,120,50); font-weight: bold; }
+.s3 { color: rgb(165,194,97); }
+.s4 { color: rgb(104,151,187); }
+.s5 { color: rgb(98,151,85); font-style: italic; }
+.s6 { color: rgb(204,120,50); }
+.s7 { color: rgb(0,128,128); }
+</style>
+</head>
+<BODY BGCOLOR="#2b2b2b">
+<TABLE CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#C0C0C0" >
+<TR><TD><CENTER>
+<FONT FACE="Arial, Helvetica" COLOR="#000000">
+order.py</FONT>
+</center></TD></TR></TABLE>
+<pre>
+
+<a name="l1"><span class="ln">1    </span></a><span class="s0">#!/usr/bin/env python</span><span class="s1"> 
+<a name="l2"><span class="ln">2    </span></a></span><span class="s0"># -- coding: utf-8 --</span><span class="s1"> 
+<a name="l3"><span class="ln">3    </span></a> 
+<a name="l4"><span class="ln">4    </span></a></span><span class="s2">from </span><span class="s1">gluon </span><span class="s2">import </span><span class="s1">current 
+<a name="l5"><span class="ln">5    </span></a></span><span class="s2">from </span><span class="s1">gluon.tools </span><span class="s2">import </span><span class="s1">geocode 
+<a name="l6"><span class="ln">6    </span></a></span><span class="s2">from </span><span class="s1">gluon.tools </span><span class="s2">import </span><span class="s1">redirect 
+<a name="l7"><span class="ln">7    </span></a></span><span class="s2">from </span><span class="s1">gluon </span><span class="s2">import </span><span class="s1">SQLFORM 
+<a name="l8"><span class="ln">8    </span></a></span><span class="s2">from </span><span class="s1">gluon </span><span class="s2">import </span><span class="s1">URL 
+<a name="l9"><span class="ln">9    </span></a></span><span class="s2">import </span><span class="s1">datetime 
+<a name="l10"><span class="ln">10   </span></a></span><span class="s2">import </span><span class="s1">json 
+<a name="l11"><span class="ln">11   </span></a></span><span class="s2">import </span><span class="s1">urllib2 
+<a name="l12"><span class="ln">12   </span></a></span><span class="s2">import </span><span class="s1">requests 
+<a name="l13"><span class="ln">13   </span></a></span><span class="s2">import </span><span class="s1">re 
+<a name="l14"><span class="ln">14   </span></a></span><span class="s2">import </span><span class="s1">cPickle 
+<a name="l15"><span class="ln">15   </span></a> 
+<a name="l16"><span class="ln">16   </span></a> 
+<a name="l17"><span class="ln">17   </span></a></span><span class="s2">class </span><span class="s1">App(object): 
+<a name="l18"><span class="ln">18   </span></a>    </span><span class="s2">def </span><span class="s1">__init__(self): 
+<a name="l19"><span class="ln">19   </span></a>        self.google_key = </span><span class="s3">&quot;AIzaSyC5tj3ulnc4nZCQR1ui1ZAqpdaxpCU9wYA&quot;</span><span class="s1"> 
+<a name="l20"><span class="ln">20   </span></a>        self.flightstats_key = </span><span class="s3">&quot;432be7f372adf6d5eff1d894767d4036&quot;</span><span class="s1"> 
+<a name="l21"><span class="ln">21   </span></a>        self.flightstats_id = </span><span class="s3">&quot;47c14783&quot;</span><span class="s1"> 
+<a name="l22"><span class="ln">22   </span></a>        </span><span class="s0">#self.order_count = self.get_order_count()</span><span class="s1"> 
+<a name="l23"><span class="ln">23   </span></a>        self.check_orders_var = None 
+<a name="l24"><span class="ln">24   </span></a>        self.order_contents = None 
+<a name="l25"><span class="ln">25   </span></a>        self.order_jobs = None 
+<a name="l26"><span class="ln">26   </span></a> 
+<a name="l27"><span class="ln">27   </span></a> 
+<a name="l28"><span class="ln">28   </span></a></span><span class="s0">#  I dont know what this is</span><span class="s1"> 
+<a name="l29"><span class="ln">29   </span></a></span><span class="s0">############################################</span><span class="s1"> 
+<a name="l30"><span class="ln">30   </span></a>        </span><span class="s0">#self.check_orders()</span><span class="s1"> 
+<a name="l31"><span class="ln">31   </span></a>    </span><span class="s2">def </span><span class="s1">get_current(self): 
+<a name="l32"><span class="ln">32   </span></a>        </span><span class="s0">#return current.session.order_count</span><span class="s1"> 
+<a name="l33"><span class="ln">33   </span></a>        x = current.db(current.db.orders.status==</span><span class="s3">'accepted'</span><span class="s1">).select() 
+<a name="l34"><span class="ln">34   </span></a>        </span><span class="s0">#return x</span><span class="s1"> 
+<a name="l35"><span class="ln">35   </span></a>        current.session.order_count -= </span><span class="s4">1</span><span class="s1"> 
+<a name="l36"><span class="ln">36   </span></a>        </span><span class="s2">return </span><span class="s1">True 
+<a name="l37"><span class="ln">37   </span></a>        </span><span class="s0">#return order_count</span><span class="s1"> 
+<a name="l38"><span class="ln">38   </span></a> </span><span class="s0">############################################</span><span class="s1"> 
+<a name="l39"><span class="ln">39   </span></a> 
+<a name="l40"><span class="ln">40   </span></a> 
+<a name="l41"><span class="ln">41   </span></a>    </span><span class="s2">def </span><span class="s1">get_order_count(self): 
+<a name="l42"><span class="ln">42   </span></a>        </span><span class="s0">#old code</span><span class="s1"> 
+<a name="l43"><span class="ln">43   </span></a>        </span><span class="s5">''' 
+<a name="l44"><span class="ln">44   </span></a>        query = current.db.orders.status == 'accepted' 
+<a name="l45"><span class="ln">45   </span></a>        count = current.db(query).count() 
+<a name="l46"><span class="ln">46   </span></a>        return count 
+<a name="l47"><span class="ln">47   </span></a>        '''</span><span class="s1"> 
+<a name="l48"><span class="ln">48   </span></a>        </span><span class="s0">#new code</span><span class="s1"> 
+<a name="l49"><span class="ln">49   </span></a>        </span><span class="s2">return </span><span class="s1">current.db(current.db.orders.status == </span><span class="s3">'accepted'</span><span class="s1">).count() 
+<a name="l50"><span class="ln">50   </span></a> 
+<a name="l51"><span class="ln">51   </span></a>    </span><span class="s2">def </span><span class="s1">check_orders(self): 
+<a name="l52"><span class="ln">52   </span></a>        </span><span class="s0">#checks cache before reloading orders</span><span class="s1"> 
+<a name="l53"><span class="ln">53   </span></a>        </span><span class="s5">''' 
+<a name="l54"><span class="ln">54   </span></a>        #old code 
+<a name="l55"><span class="ln">55   </span></a>        query = current.db.orders.status == 'accepted' 
+<a name="l56"><span class="ln">56   </span></a>        order_count = current.db(query).count() 
+<a name="l57"><span class="ln">57   </span></a>        self.order_count = order_count 
+<a name="l58"><span class="ln">58   </span></a>        '''</span><span class="s1"> 
+<a name="l59"><span class="ln">59   </span></a> 
+<a name="l60"><span class="ln">60   </span></a>        </span><span class="s0">#if self.order_count &lt;= order_count:</span><span class="s1"> 
+<a name="l61"><span class="ln">61   </span></a>        self.order_count = current.db(current.db.orders.status == </span><span class="s3">'accepted'</span><span class="s1">).count() 
+<a name="l62"><span class="ln">62   </span></a>        self.check_orders_var = self.get_orders() 
+<a name="l63"><span class="ln">63   </span></a>        self.order_contents = self.get_contents() 
+<a name="l64"><span class="ln">64   </span></a>        self.order_jobs = self.get_segments() 
+<a name="l65"><span class="ln">65   </span></a> 
+<a name="l66"><span class="ln">66   </span></a>        </span><span class="s2">return </span><span class="s1">True 
+<a name="l67"><span class="ln">67   </span></a>        </span><span class="s0">#else:</span><span class="s1"> 
+<a name="l68"><span class="ln">68   </span></a>        </span><span class="s0">#return False</span><span class="s1"> 
+<a name="l69"><span class="ln">69   </span></a> 
+<a name="l70"><span class="ln">70   </span></a>    </span><span class="s2">def </span><span class="s1">get_segments(self): 
+<a name="l71"><span class="ln">71   </span></a> 
+<a name="l72"><span class="ln">72   </span></a>        </span><span class="s0"># THIS RETURNS MULTIPLE SEGMENTS/JOBS FOR EACH ORDER -</span><span class="s1"> 
+<a name="l73"><span class="ln">73   </span></a>        order_jobs_all = current.db((current.db.orders.status == </span><span class="s3">'accepted'</span><span class="s1">)).select( 
+<a name="l74"><span class="ln">74   </span></a>            current.db.segment.ALL</span><span class="s6">,</span><span class="s1"> 
+<a name="l75"><span class="ln">75   </span></a>            current.db.jobs.ALL</span><span class="s6">,</span><span class="s1"> 
+<a name="l76"><span class="ln">76   </span></a>            current.db.basicInformation.ALL</span><span class="s6">,</span><span class="s1"> 
+<a name="l77"><span class="ln">77   </span></a>            current.db.addressLocationContactInformation.ALL</span><span class="s6">,</span><span class="s1"> 
+<a name="l78"><span class="ln">78   </span></a>            left=[</span><span class="s0">#first two were orders.id</span><span class="s1"> 
+<a name="l79"><span class="ln">79   </span></a>                current.db.segment.on(current.db.segment.order_id == current.db.orders.order_id)</span><span class="s6">,</span><span class="s1"> 
+<a name="l80"><span class="ln">80   </span></a>                current.db.jobs.on(current.db.jobs.order_id == current.db.orders.order_id)</span><span class="s6">,</span><span class="s1"> 
+<a name="l81"><span class="ln">81   </span></a>                current.db.basicInformation.on(current.db.basicInformation.basicID == current.db.jobs.driver_id)</span><span class="s6">,</span><span class="s1"> 
+<a name="l82"><span class="ln">82   </span></a>                current.db.addressLocationContactInformation.on( 
+<a name="l83"><span class="ln">83   </span></a>                    current.db.addressLocationContactInformation.alciID == current.db.jobs.driver_id 
+<a name="l84"><span class="ln">84   </span></a>                ) 
+<a name="l85"><span class="ln">85   </span></a>            ] 
+<a name="l86"><span class="ln">86   </span></a>        ) 
+<a name="l87"><span class="ln">87   </span></a> 
+<a name="l88"><span class="ln">88   </span></a>        order_jobs = {} 
+<a name="l89"><span class="ln">89   </span></a> 
+<a name="l90"><span class="ln">90   </span></a>        </span><span class="s0"># build out the multi-tiered dict structure first</span><span class="s1"> 
+<a name="l91"><span class="ln">91   </span></a>        </span><span class="s2">for </span><span class="s1">order_job </span><span class="s2">in </span><span class="s1">order_jobs_all: 
+<a name="l92"><span class="ln">92   </span></a>            order_jobs[</span><span class="s7">u'%s' </span><span class="s1">% order_job.segment.order_id] = { 
+<a name="l93"><span class="ln">93   </span></a>                </span><span class="s3">'segments'</span><span class="s1">: { 
+<a name="l94"><span class="ln">94   </span></a>                    </span><span class="s3">'1'</span><span class="s1">: None</span><span class="s6">,</span><span class="s1"> 
+<a name="l95"><span class="ln">95   </span></a>                    </span><span class="s3">'2'</span><span class="s1">: None 
+<a name="l96"><span class="ln">96   </span></a>                }</span><span class="s6">,</span><span class="s1"> 
+<a name="l97"><span class="ln">97   </span></a>                </span><span class="s3">'jobs'</span><span class="s1">: { 
+<a name="l98"><span class="ln">98   </span></a>                    </span><span class="s3">'1'</span><span class="s1">: { 
+<a name="l99"><span class="ln">99   </span></a>                        </span><span class="s3">'job'</span><span class="s1">: None</span><span class="s6">,</span><span class="s1"> 
+<a name="l100"><span class="ln">100  </span></a>                        </span><span class="s3">'basic_information'</span><span class="s1">: None</span><span class="s6">,</span><span class="s1"> 
+<a name="l101"><span class="ln">101  </span></a>                        </span><span class="s3">'address_location_contact_information'</span><span class="s1">: None 
+<a name="l102"><span class="ln">102  </span></a>                    }</span><span class="s6">,</span><span class="s1"> 
+<a name="l103"><span class="ln">103  </span></a>                    </span><span class="s3">'2'</span><span class="s1">: { 
+<a name="l104"><span class="ln">104  </span></a>                        </span><span class="s3">'job'</span><span class="s1">: None</span><span class="s6">,</span><span class="s1"> 
+<a name="l105"><span class="ln">105  </span></a>                        </span><span class="s3">'basic_information'</span><span class="s1">: None</span><span class="s6">,</span><span class="s1"> 
+<a name="l106"><span class="ln">106  </span></a>                        </span><span class="s3">'address_location_contact_information'</span><span class="s1">: None 
+<a name="l107"><span class="ln">107  </span></a>                    } 
+<a name="l108"><span class="ln">108  </span></a>                } 
+<a name="l109"><span class="ln">109  </span></a>            } 
+<a name="l110"><span class="ln">110  </span></a> 
+<a name="l111"><span class="ln">111  </span></a>        </span><span class="s0"># then populate with segment and job data</span><span class="s1"> 
+<a name="l112"><span class="ln">112  </span></a>        </span><span class="s2">for </span><span class="s1">order_job </span><span class="s2">in </span><span class="s1">order_jobs_all: 
+<a name="l113"><span class="ln">113  </span></a>            </span><span class="s0"># segment data</span><span class="s1"> 
+<a name="l114"><span class="ln">114  </span></a>            order_jobs[</span><span class="s7">u'%s' </span><span class="s1">% order_job.segment.order_id][</span><span class="s3">'segments'</span><span class="s1">][order_job.segment.segment] = order_job.segment 
+<a name="l115"><span class="ln">115  </span></a> 
+<a name="l116"><span class="ln">116  </span></a>            </span><span class="s2">if </span><span class="s1">order_job.jobs.order_id: 
+<a name="l117"><span class="ln">117  </span></a>                </span><span class="s2">if </span><span class="s1">int(order_job.jobs.order_id) == int(order_job.segment.order_id): 
+<a name="l118"><span class="ln">118  </span></a>                    </span><span class="s0"># job data</span><span class="s1"> 
+<a name="l119"><span class="ln">119  </span></a>                    segment_id = str(order_job.jobs.segment_id)[:</span><span class="s4">1</span><span class="s1">] 
+<a name="l120"><span class="ln">120  </span></a>                    order_jobs[</span><span class="s7">u'%s' </span><span class="s1">% order_job.segment.order_id][</span><span class="s3">'jobs'</span><span class="s1">][segment_id][</span><span class="s3">'job'</span><span class="s1">] = order_job.jobs 
+<a name="l121"><span class="ln">121  </span></a>                    </span><span class="s0">#order_jobs[u'%s' % order_job.segment.order_id]['jobs'][order_job.jobs.segment_id][</span><span class="s1"> 
+<a name="l122"><span class="ln">122  </span></a>                        </span><span class="s0">#'job'] = order_job.jobs</span><span class="s1"> 
+<a name="l123"><span class="ln">123  </span></a> 
+<a name="l124"><span class="ln">124  </span></a>                    order_jobs[</span><span class="s7">u'%s' </span><span class="s1">% order_job.segment.order_id][</span><span class="s3">'jobs'</span><span class="s1">][segment_id][</span><span class="s3">'basic_information'</span><span class="s1">] = order_job.basicInformation 
+<a name="l125"><span class="ln">125  </span></a>                    </span><span class="s0">#order_jobs[u'%s' % order_job.segment.order_id]['jobs'][order_job.jobs.segment_id][</span><span class="s1"> 
+<a name="l126"><span class="ln">126  </span></a>                        </span><span class="s0">#'basic_information'] = order_job.basicInformation</span><span class="s1"> 
+<a name="l127"><span class="ln">127  </span></a> 
+<a name="l128"><span class="ln">128  </span></a>                    order_jobs[</span><span class="s7">u'%s' </span><span class="s1">% order_job.segment.order_id][</span><span class="s3">'jobs'</span><span class="s1">][segment_id][</span><span class="s3">'address_location_contact_information'</span><span class="s1">] = order_job.addressLocationContactInformation 
+<a name="l129"><span class="ln">129  </span></a>                    </span><span class="s0">#order_jobs[u'%s' % order_job.segment.order_id]['jobs'][order_job.jobs.segment_id][</span><span class="s1"> 
+<a name="l130"><span class="ln">130  </span></a>                        </span><span class="s0">#'address_location_contact_information'] = order_job.addressLocationContactInformation</span><span class="s1"> 
+<a name="l131"><span class="ln">131  </span></a> 
+<a name="l132"><span class="ln">132  </span></a>        </span><span class="s2">return </span><span class="s1">order_jobs 
+<a name="l133"><span class="ln">133  </span></a> 
+<a name="l134"><span class="ln">134  </span></a>    </span><span class="s2">def </span><span class="s1">get_orders(self): 
+<a name="l135"><span class="ln">135  </span></a>        orders = current.db(current.db.orders.status == </span><span class="s3">'accepted'</span><span class="s1">).select( 
+<a name="l136"><span class="ln">136  </span></a>            current.db.orders.ALL</span><span class="s6">,</span><span class="s1"> 
+<a name="l137"><span class="ln">137  </span></a>            current.db.auth_user.ALL</span><span class="s6">,</span><span class="s1"> 
+<a name="l138"><span class="ln">138  </span></a>            current.db.known_shipper.ALL</span><span class="s6">,</span><span class="s1"> 
+<a name="l139"><span class="ln">139  </span></a>            current.db.origin.ALL</span><span class="s6">,</span><span class="s1"> 
+<a name="l140"><span class="ln">140  </span></a>            current.db.destination.ALL</span><span class="s6">,</span><span class="s1"> 
+<a name="l141"><span class="ln">141  </span></a>            </span><span class="s0">#current.db.shipment_details.ALL,</span><span class="s1"> 
+<a name="l142"><span class="ln">142  </span></a>            current.db.bill_to.ALL</span><span class="s6">,</span><span class="s1"> 
+<a name="l143"><span class="ln">143  </span></a>            current.db.contact_info.ALL</span><span class="s6">,</span><span class="s1"> 
+<a name="l144"><span class="ln">144  </span></a>            current.db.notifications_order.ALL</span><span class="s6">,</span><span class="s1"> 
+<a name="l145"><span class="ln">145  </span></a>            current.db.flight_info.ALL</span><span class="s6">,</span><span class="s1"> 
+<a name="l146"><span class="ln">146  </span></a>            current.db.late_agent.ALL</span><span class="s6">,</span><span class="s1"> 
+<a name="l147"><span class="ln">147  </span></a>            left=[ 
+<a name="l148"><span class="ln">148  </span></a>                current.db.auth_user.on(current.db.orders.user_id == current.db.auth_user.id)</span><span class="s6">,</span><span class="s1"> 
+<a name="l149"><span class="ln">149  </span></a>                current.db.known_shipper.on(current.db.known_shipper.user_id == current.db.auth_user.id)</span><span class="s6">,</span><span class="s1"> 
+<a name="l150"><span class="ln">150  </span></a>                current.db.origin.on(current.db.origin.order_id == current.db.orders.order_id)</span><span class="s6">,</span><span class="s1"> 
+<a name="l151"><span class="ln">151  </span></a>                current.db.destination.on(current.db.destination.order_id == current.db.orders.order_id)</span><span class="s6">,</span><span class="s1"> 
+<a name="l152"><span class="ln">152  </span></a>                </span><span class="s0">#current.db.shipment_details.on(current.db.shipment_details.order_id == current.db.orders.id),</span><span class="s1"> 
+<a name="l153"><span class="ln">153  </span></a>                current.db.bill_to.on(current.db.bill_to.order_id == current.db.orders.order_id)</span><span class="s6">,</span><span class="s1"> 
+<a name="l154"><span class="ln">154  </span></a>                current.db.contact_info.on(current.db.contact_info.order_id == current.db.orders.order_id)</span><span class="s6">,</span><span class="s1"> 
+<a name="l155"><span class="ln">155  </span></a>                current.db.notifications_order.on(current.db.notifications_order.order_id == current.db.orders.order_id)</span><span class="s6">,</span><span class="s1"> 
+<a name="l156"><span class="ln">156  </span></a>                current.db.flight_info.on(current.db.flight_info.order_id == current.db.orders.id)</span><span class="s6">,</span><span class="s1"> 
+<a name="l157"><span class="ln">157  </span></a>                current.db.late_agent.on(current.db.late_agent.order_id == current.db.orders.id) 
+<a name="l158"><span class="ln">158  </span></a>            ]</span><span class="s6">,</span><span class="s1"> 
+<a name="l159"><span class="ln">159  </span></a>            orderby=~current.db.orders.id 
+<a name="l160"><span class="ln">160  </span></a>        ) 
+<a name="l161"><span class="ln">161  </span></a>        </span><span class="s2">return </span><span class="s1">orders 
+<a name="l162"><span class="ln">162  </span></a> 
+<a name="l163"><span class="ln">163  </span></a>    </span><span class="s2">def </span><span class="s1">get_contents(self): 
+<a name="l164"><span class="ln">164  </span></a>        count = current.db.contents.order_id.count() </span><span class="s0">#was contents.id</span><span class="s1"> 
+<a name="l165"><span class="ln">165  </span></a>        sum = current.db.contents.weight.sum() 
+<a name="l166"><span class="ln">166  </span></a>        </span><span class="s0">#any_dg = current.db.contents.dangerous.contains('yes')</span><span class="s1"> 
+<a name="l167"><span class="ln">167  </span></a> 
+<a name="l168"><span class="ln">168  </span></a>        query = current.db.orders.order_id == current.db.contents.order_id 
+<a name="l169"><span class="ln">169  </span></a>        order_contents_stats = current.db(query).select( 
+<a name="l170"><span class="ln">170  </span></a>            current.db.orders.order_id</span><span class="s6">,</span><span class="s1"> 
+<a name="l171"><span class="ln">171  </span></a>            count</span><span class="s6">,</span><span class="s1"> 
+<a name="l172"><span class="ln">172  </span></a>            sum</span><span class="s6">,</span><span class="s1"> 
+<a name="l173"><span class="ln">173  </span></a>            </span><span class="s0">#any_dg,</span><span class="s1"> 
+<a name="l174"><span class="ln">174  </span></a>            groupby=current.db.orders.order_id 
+<a name="l175"><span class="ln">175  </span></a>        ) 
+<a name="l176"><span class="ln">176  </span></a> 
+<a name="l177"><span class="ln">177  </span></a>        order_contents = {} 
+<a name="l178"><span class="ln">178  </span></a>        </span><span class="s2">for </span><span class="s1">order_stats </span><span class="s2">in </span><span class="s1">order_contents_stats: 
+<a name="l179"><span class="ln">179  </span></a>            order_contents_result = current.db( 
+<a name="l180"><span class="ln">180  </span></a>                (current.db.orders.status == </span><span class="s3">'accepted'</span><span class="s1">) &amp; (current.db.orders.order_id == order_stats.orders.order_id)). \ 
+<a name="l181"><span class="ln">181  </span></a>                select(current.db.contents.ALL</span><span class="s6">, </span><span class="s0">#above was orders.id == order_stats.orders.id</span><span class="s1"> 
+<a name="l182"><span class="ln">182  </span></a>                       left=current.db.contents.on( 
+<a name="l183"><span class="ln">183  </span></a>                           current.db.contents.order_id == current.db.orders.order_id </span><span class="s0"># was orders.id</span><span class="s1"> 
+<a name="l184"><span class="ln">184  </span></a>                       ) 
+<a name="l185"><span class="ln">185  </span></a>            ) 
+<a name="l186"><span class="ln">186  </span></a> 
+<a name="l187"><span class="ln">187  </span></a>            any_dg = None 
+<a name="l188"><span class="ln">188  </span></a>            </span><span class="s2">for </span><span class="s1">package </span><span class="s2">in </span><span class="s1">order_contents_result: 
+<a name="l189"><span class="ln">189  </span></a>                </span><span class="s2">if </span><span class="s1">package.dangerous == </span><span class="s3">'yes'</span><span class="s1">: 
+<a name="l190"><span class="ln">190  </span></a>                    any_dg = True 
+<a name="l191"><span class="ln">191  </span></a> 
+<a name="l192"><span class="ln">192  </span></a>            order_contents[order_stats.orders.order_id] = { 
+<a name="l193"><span class="ln">193  </span></a>                </span><span class="s3">'count'</span><span class="s1">: order_stats[count]</span><span class="s6">,</span><span class="s1"> 
+<a name="l194"><span class="ln">194  </span></a>                </span><span class="s3">'total_weight'</span><span class="s1">: order_stats[sum]</span><span class="s6">,</span><span class="s1"> 
+<a name="l195"><span class="ln">195  </span></a>                </span><span class="s3">'any_dg'</span><span class="s1">: any_dg</span><span class="s6">,</span><span class="s1"> 
+<a name="l196"><span class="ln">196  </span></a>                </span><span class="s3">'contents'</span><span class="s1">: order_contents_result</span><span class="s6">,</span><span class="s1"> 
+<a name="l197"><span class="ln">197  </span></a>            } 
+<a name="l198"><span class="ln">198  </span></a>        </span><span class="s2">return </span><span class="s1">order_contents 
+<a name="l199"><span class="ln">199  </span></a> 
+<a name="l200"><span class="ln">200  </span></a> 
+<a name="l201"><span class="ln">201  </span></a></span><span class="s2">class </span><span class="s1">Order(App): 
+<a name="l202"><span class="ln">202  </span></a>    </span><span class="s2">def </span><span class="s1">__init__(self</span><span class="s6">, </span><span class="s1">quote=False</span><span class="s6">, </span><span class="s1">order_id=None</span><span class="s6">, </span><span class="s1">new_order=None): 
+<a name="l203"><span class="ln">203  </span></a>        App.__init__(self) 
+<a name="l204"><span class="ln">204  </span></a> 
+<a name="l205"><span class="ln">205  </span></a> 
+<a name="l206"><span class="ln">206  </span></a>        </span><span class="s2">if </span><span class="s1">new_order == True: </span><span class="s0">#if its a new order then we need to explicitly clear order &amp; order_id</span><span class="s1"> 
+<a name="l207"><span class="ln">207  </span></a>            self.order = None 
+<a name="l208"><span class="ln">208  </span></a>            self.order_id = None 
+<a name="l209"><span class="ln">209  </span></a> 
+<a name="l210"><span class="ln">210  </span></a>        </span><span class="s2">if not </span><span class="s1">order_id: 
+<a name="l211"><span class="ln">211  </span></a>            </span><span class="s2">if not </span><span class="s1">quote: 
+<a name="l212"><span class="ln">212  </span></a>                self.set_order() </span><span class="s0">#assigns self.order_id</span><span class="s1"> 
+<a name="l213"><span class="ln">213  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l214"><span class="ln">214  </span></a>            self.order_id = order_id 
+<a name="l215"><span class="ln">215  </span></a> 
+<a name="l216"><span class="ln">216  </span></a>        self.quote = quote 
+<a name="l217"><span class="ln">217  </span></a>        self.distance = None 
+<a name="l218"><span class="ln">218  </span></a>        self.origin_latlng = None 
+<a name="l219"><span class="ln">219  </span></a>        self.destination_latlng = None 
+<a name="l220"><span class="ln">220  </span></a>        self.shipper_info = None 
+<a name="l221"><span class="ln">221  </span></a>        </span><span class="s2">if </span><span class="s1">quote == False: 
+<a name="l222"><span class="ln">222  </span></a>            self.order = self.get_order() 
+<a name="l223"><span class="ln">223  </span></a>        self.flight_matrix = { 
+<a name="l224"><span class="ln">224  </span></a>            </span><span class="s3">&quot;arrival_times&quot;</span><span class="s1">: []</span><span class="s6">,</span><span class="s1"> 
+<a name="l225"><span class="ln">225  </span></a>            </span><span class="s3">&quot;flights&quot;</span><span class="s1">: []</span><span class="s6">,</span><span class="s1"> 
+<a name="l226"><span class="ln">226  </span></a>            </span><span class="s3">&quot;total_times&quot;</span><span class="s1">: []</span><span class="s6">,</span><span class="s1"> 
+<a name="l227"><span class="ln">227  </span></a>            </span><span class="s3">&quot;total_prices&quot;</span><span class="s1">: []</span><span class="s6">,</span><span class="s1"> 
+<a name="l228"><span class="ln">228  </span></a>            </span><span class="s3">&quot;leg1&quot;</span><span class="s1">: []</span><span class="s6">,</span><span class="s1"> 
+<a name="l229"><span class="ln">229  </span></a>            </span><span class="s3">&quot;leg2&quot;</span><span class="s1">: [] 
+<a name="l230"><span class="ln">230  </span></a>        } 
+<a name="l231"><span class="ln">231  </span></a> 
+<a name="l232"><span class="ln">232  </span></a>        </span><span class="s0">#avoids db, for users w/o an account</span><span class="s1"> 
+<a name="l233"><span class="ln">233  </span></a>        </span><span class="s2">if </span><span class="s1">self.quote: 
+<a name="l234"><span class="ln">234  </span></a>            self.delivery_datetime = None 
+<a name="l235"><span class="ln">235  </span></a>            self.duration = None 
+<a name="l236"><span class="ln">236  </span></a>            self.price = None 
+<a name="l237"><span class="ln">237  </span></a>            self.pickup_datetime = None 
+<a name="l238"><span class="ln">238  </span></a> 
+<a name="l239"><span class="ln">239  </span></a>            </span><span class="s0">#get variables, either from session or request.args</span><span class="s1"> 
+<a name="l240"><span class="ln">240  </span></a>            </span><span class="s2">try</span><span class="s1">: 
+<a name="l241"><span class="ln">241  </span></a>                self.origin = current.request.args[</span><span class="s4">0</span><span class="s1">] 
+<a name="l242"><span class="ln">242  </span></a>                self.destination = current.request.args[</span><span class="s4">1</span><span class="s1">] 
+<a name="l243"><span class="ln">243  </span></a>                self.weight = current.request.args[</span><span class="s4">2</span><span class="s1">] 
+<a name="l244"><span class="ln">244  </span></a>                self.ready_datetime = current.request.now 
+<a name="l245"><span class="ln">245  </span></a> 
+<a name="l246"><span class="ln">246  </span></a>            </span><span class="s2">except</span><span class="s1">: 
+<a name="l247"><span class="ln">247  </span></a>                self.origin = current.session.origin 
+<a name="l248"><span class="ln">248  </span></a>                self.destination = current.session.destination 
+<a name="l249"><span class="ln">249  </span></a>                self.weight = current.session.weight 
+<a name="l250"><span class="ln">250  </span></a>                ready_date = current.session.pickup_date 
+<a name="l251"><span class="ln">251  </span></a>                ready_time = datetime.datetime.strptime(str(current.session.pickup_time)</span><span class="s6">, </span><span class="s3">'%H:%M:%S'</span><span class="s1">).time() 
+<a name="l252"><span class="ln">252  </span></a>                self.ready_datetime = datetime.datetime.combine(ready_date</span><span class="s6">, </span><span class="s1">ready_time) 
+<a name="l253"><span class="ln">253  </span></a> 
+<a name="l254"><span class="ln">254  </span></a> 
+<a name="l255"><span class="ln">255  </span></a>    </span><span class="s0"># sets appropriate order_id depending on status of users' current order</span><span class="s1"> 
+<a name="l256"><span class="ln">256  </span></a>    </span><span class="s2">def </span><span class="s1">set_order(self): 
+<a name="l257"><span class="ln">257  </span></a>        order = current.db(current.db.orders.user_id == current.auth.user_id).select().last() 
+<a name="l258"><span class="ln">258  </span></a> 
+<a name="l259"><span class="ln">259  </span></a>        </span><span class="s2">if </span><span class="s1">order: 
+<a name="l260"><span class="ln">260  </span></a>            </span><span class="s2">if </span><span class="s1">order.status != </span><span class="s3">&quot;pending&quot;</span><span class="s1">: 
+<a name="l261"><span class="ln">261  </span></a>                current.db.orders.insert() 
+<a name="l262"><span class="ln">262  </span></a>                order = current.db(current.db.orders.user_id == current.auth.user_id).select().last() </span><span class="s0">#this is not grabbing the last row</span><span class="s1"> 
+<a name="l263"><span class="ln">263  </span></a>                self.order_id = order.order_id 
+<a name="l264"><span class="ln">264  </span></a>            </span><span class="s2">else</span><span class="s1">: 
+<a name="l265"><span class="ln">265  </span></a>                self.order_id = order.order_id 
+<a name="l266"><span class="ln">266  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l267"><span class="ln">267  </span></a>            current.db.orders.insert() 
+<a name="l268"><span class="ln">268  </span></a> 
+<a name="l269"><span class="ln">269  </span></a>            order = current.db(current.db.orders.user_id == current.auth.user_id).select().last() 
+<a name="l270"><span class="ln">270  </span></a>            self.order_id = order.order_id 
+<a name="l271"><span class="ln">271  </span></a> 
+<a name="l272"><span class="ln">272  </span></a> 
+<a name="l273"><span class="ln">273  </span></a>    </span><span class="s2">def </span><span class="s1">set_all(self): 
+<a name="l274"><span class="ln">274  </span></a>        self.origin = self.get_origin() 
+<a name="l275"><span class="ln">275  </span></a>        self.destination = self.get_destination() 
+<a name="l276"><span class="ln">276  </span></a>        self.contents = self.get_contents() 
+<a name="l277"><span class="ln">277  </span></a>        self.billing = self.get_billing() 
+<a name="l278"><span class="ln">278  </span></a>        self.notifications = self.get_notifications() 
+<a name="l279"><span class="ln">279  </span></a>        self.contact_info = self.get_contact() 
+<a name="l280"><span class="ln">280  </span></a>        self.set_latlng(</span><span class="s3">'origin'</span><span class="s1">) 
+<a name="l281"><span class="ln">281  </span></a>        self.set_latlng(</span><span class="s3">'destination'</span><span class="s1">) 
+<a name="l282"><span class="ln">282  </span></a>        </span><span class="s2">return </span><span class="s1">True 
+<a name="l283"><span class="ln">283  </span></a> 
+<a name="l284"><span class="ln">284  </span></a>    </span><span class="s0">#sets local variables for order quote object</span><span class="s1"> 
+<a name="l285"><span class="ln">285  </span></a>    </span><span class="s2">def </span><span class="s1">set_quote(self</span><span class="s6">, </span><span class="s1">flight=False): 
+<a name="l286"><span class="ln">286  </span></a> 
+<a name="l287"><span class="ln">287  </span></a>        </span><span class="s0">#get ready datetime and add 90 minutes</span><span class="s1"> 
+<a name="l288"><span class="ln">288  </span></a>        self.pickup_datetime = datetime.datetime.combine(self.ready_datetime</span><span class="s6">, </span><span class="s1">self.ready_datetime.time()) + \ 
+<a name="l289"><span class="ln">289  </span></a>                               datetime.timedelta(minutes=</span><span class="s4">90</span><span class="s1">) 
+<a name="l290"><span class="ln">290  </span></a>        address_table = current.db(current.db.addressLocationContactInformation.alciID==current.db.fleetInfoTransportationRates.fitrID).select( 
+<a name="l291"><span class="ln">291  </span></a>            current.db.addressLocationContactInformation.ALL</span><span class="s6">,</span><span class="s1">current.db.fleetInfoTransportationRates.ALL</span><span class="s6">, </span><span class="s1">left=current.db.addressLocationContactInformation.on( 
+<a name="l292"><span class="ln">292  </span></a>                current.db.addressLocationContactInformation.alciID==current.db.fleetInfoTransportationRates.fitrID 
+<a name="l293"><span class="ln">293  </span></a>            ) 
+<a name="l294"><span class="ln">294  </span></a>        ) 
+<a name="l295"><span class="ln">295  </span></a>        origin_agent</span><span class="s6">,</span><span class="s1">dest_agent = None</span><span class="s6">,</span><span class="s1">None 
+<a name="l296"><span class="ln">296  </span></a>        </span><span class="s2">for </span><span class="s1">address </span><span class="s2">in </span><span class="s1">address_table: 
+<a name="l297"><span class="ln">297  </span></a>            </span><span class="s2">if </span><span class="s1">current.request.args[</span><span class="s4">0</span><span class="s1">] </span><span class="s2">in </span><span class="s1">address.addressLocationContactInformation.zipcodes_serviced: 
+<a name="l298"><span class="ln">298  </span></a>                origin_agent = address 
+<a name="l299"><span class="ln">299  </span></a>            </span><span class="s2">elif </span><span class="s1">current.request.args[</span><span class="s4">0</span><span class="s1">] </span><span class="s2">not in </span><span class="s1">address.addressLocationContactInformation.zipcodes_serviced: 
+<a name="l300"><span class="ln">300  </span></a>                origin_agent = None 
+<a name="l301"><span class="ln">301  </span></a>            </span><span class="s2">if </span><span class="s1">current.request.args[</span><span class="s4">1</span><span class="s1">] </span><span class="s2">in </span><span class="s1">address.addressLocationContactInformation.zipcodes_serviced: 
+<a name="l302"><span class="ln">302  </span></a>                dest_agent = address 
+<a name="l303"><span class="ln">303  </span></a>            </span><span class="s2">elif </span><span class="s1">current.request.args[</span><span class="s4">1</span><span class="s1">] </span><span class="s2">not in </span><span class="s1">address.addressLocationContactInformation.zipcodes_serviced: 
+<a name="l304"><span class="ln">304  </span></a>                dest_agent = None 
+<a name="l305"><span class="ln">305  </span></a>        </span><span class="s2">if </span><span class="s1">flight: 
+<a name="l306"><span class="ln">306  </span></a>            self.set_latlng(</span><span class="s3">&quot;origin&quot;</span><span class="s1">) 
+<a name="l307"><span class="ln">307  </span></a>            self.set_latlng(</span><span class="s3">&quot;destination&quot;</span><span class="s1">) 
+<a name="l308"><span class="ln">308  </span></a>            </span><span class="s2">return </span><span class="s1">True 
+<a name="l309"><span class="ln">309  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l310"><span class="ln">310  </span></a>            self.price = self.ground_quote(origin_agent</span><span class="s6">,</span><span class="s1">self.distance) 
+<a name="l311"><span class="ln">311  </span></a>            self.set_dropoff_time() 
+<a name="l312"><span class="ln">312  </span></a>            </span><span class="s2">return </span><span class="s1">True 
+<a name="l313"><span class="ln">313  </span></a> 
+<a name="l314"><span class="ln">314  </span></a>    </span><span class="s2">def </span><span class="s1">get_pickup_datetime(self): 
+<a name="l315"><span class="ln">315  </span></a>        </span><span class="s2">if not </span><span class="s1">self.quote: 
+<a name="l316"><span class="ln">316  </span></a>            pickup_datetime = self.order.pickup_time 
+<a name="l317"><span class="ln">317  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l318"><span class="ln">318  </span></a>            pickup_datetime = self.pickup_datetime 
+<a name="l319"><span class="ln">319  </span></a> 
+<a name="l320"><span class="ln">320  </span></a>        pickup_datetime = datetime.datetime.strftime(pickup_datetime</span><span class="s6">, </span><span class="s3">&quot;%I:%M %p - %m/%d/%Y&quot;</span><span class="s1">) 
+<a name="l321"><span class="ln">321  </span></a>        </span><span class="s2">return </span><span class="s1">pickup_datetime 
+<a name="l322"><span class="ln">322  </span></a> 
+<a name="l323"><span class="ln">323  </span></a>    </span><span class="s2">def </span><span class="s1">get_delivery_datetime(self): 
+<a name="l324"><span class="ln">324  </span></a>        </span><span class="s2">if not </span><span class="s1">self.quote: 
+<a name="l325"><span class="ln">325  </span></a>            delivery_datetime = self.order.delivery_time 
+<a name="l326"><span class="ln">326  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l327"><span class="ln">327  </span></a>            delivery_datetime = self.delivery_datetime 
+<a name="l328"><span class="ln">328  </span></a> 
+<a name="l329"><span class="ln">329  </span></a>        delivery_datetime = datetime.datetime.strftime(delivery_datetime</span><span class="s6">, </span><span class="s3">&quot;%I:%M %p - %m/%d/%Y&quot;</span><span class="s1">) 
+<a name="l330"><span class="ln">330  </span></a>        </span><span class="s2">return </span><span class="s1">delivery_datetime 
+<a name="l331"><span class="ln">331  </span></a> 
+<a name="l332"><span class="ln">332  </span></a>    </span><span class="s2">def </span><span class="s1">get_ready_datetime(self): 
+<a name="l333"><span class="ln">333  </span></a>        ready_datetime = datetime.datetime.strftime(self.ready_datetime</span><span class="s6">, </span><span class="s3">'%I:%M %p - %m/%d/%Y'</span><span class="s1">) 
+<a name="l334"><span class="ln">334  </span></a>        </span><span class="s2">return </span><span class="s1">ready_datetime 
+<a name="l335"><span class="ln">335  </span></a> 
+<a name="l336"><span class="ln">336  </span></a>    </span><span class="s2">def </span><span class="s1">get_order(self): 
+<a name="l337"><span class="ln">337  </span></a>        </span><span class="s2">try</span><span class="s1">: 
+<a name="l338"><span class="ln">338  </span></a>            order = current.db(current.db.orders.order_id == self.order_id).select().first() 
+<a name="l339"><span class="ln">339  </span></a>            </span><span class="s2">return </span><span class="s1">order 
+<a name="l340"><span class="ln">340  </span></a>        </span><span class="s2">except</span><span class="s1">: 
+<a name="l341"><span class="ln">341  </span></a>            </span><span class="s2">return </span><span class="s1">None 
+<a name="l342"><span class="ln">342  </span></a> 
+<a name="l343"><span class="ln">343  </span></a>    </span><span class="s2">def </span><span class="s1">get_status(self): 
+<a name="l344"><span class="ln">344  </span></a>        </span><span class="s2">return </span><span class="s1">self.order.status 
+<a name="l345"><span class="ln">345  </span></a> 
+<a name="l346"><span class="ln">346  </span></a>    </span><span class="s2">def </span><span class="s1">set_status(self</span><span class="s6">, </span><span class="s1">status): 
+<a name="l347"><span class="ln">347  </span></a>        </span><span class="s2">try</span><span class="s1">: 
+<a name="l348"><span class="ln">348  </span></a>            self.order.update_record(status=status) 
+<a name="l349"><span class="ln">349  </span></a>            </span><span class="s2">return </span><span class="s1">True 
+<a name="l350"><span class="ln">350  </span></a>        </span><span class="s2">except</span><span class="s1">: 
+<a name="l351"><span class="ln">351  </span></a>            </span><span class="s2">return </span><span class="s1">False 
+<a name="l352"><span class="ln">352  </span></a> 
+<a name="l353"><span class="ln">353  </span></a> 
+<a name="l354"><span class="ln">354  </span></a>    </span><span class="s2">def </span><span class="s1">set_pickup_time(self): 
+<a name="l355"><span class="ln">355  </span></a>        </span><span class="s0">#get pickup datetime and add 90 minutes</span><span class="s1"> 
+<a name="l356"><span class="ln">356  </span></a>        pickup_datetime = datetime.datetime.combine(self.origin.shipment_ready_date</span><span class="s6">, </span><span class="s1">self.origin.shipment_ready_time) + \ 
+<a name="l357"><span class="ln">357  </span></a>                          datetime.timedelta(minutes=</span><span class="s4">90</span><span class="s1">) 
+<a name="l358"><span class="ln">358  </span></a> 
+<a name="l359"><span class="ln">359  </span></a>        </span><span class="s2">try</span><span class="s1">: 
+<a name="l360"><span class="ln">360  </span></a>            self.order.update_record(pickup_time=pickup_datetime) 
+<a name="l361"><span class="ln">361  </span></a>            </span><span class="s2">return </span><span class="s1">True 
+<a name="l362"><span class="ln">362  </span></a>        </span><span class="s2">except</span><span class="s1">: 
+<a name="l363"><span class="ln">363  </span></a>            </span><span class="s2">return </span><span class="s1">False 
+<a name="l364"><span class="ln">364  </span></a> 
+<a name="l365"><span class="ln">365  </span></a> 
+<a name="l366"><span class="ln">366  </span></a>    </span><span class="s0">#sets delivery time for ground orders</span><span class="s1"> 
+<a name="l367"><span class="ln">367  </span></a>    </span><span class="s2">def </span><span class="s1">set_dropoff_time(self): 
+<a name="l368"><span class="ln">368  </span></a> 
+<a name="l369"><span class="ln">369  </span></a>        duration = self.get_duration() 
+<a name="l370"><span class="ln">370  </span></a>        </span><span class="s2">try</span><span class="s1">: 
+<a name="l371"><span class="ln">371  </span></a>        </span><span class="s0">#if duration[1]:</span><span class="s1"> 
+<a name="l372"><span class="ln">372  </span></a>            duration = datetime.timedelta(hours=int(duration[</span><span class="s4">0</span><span class="s1">])</span><span class="s6">, </span><span class="s1">minutes=int(duration[</span><span class="s4">1</span><span class="s1">])) 
+<a name="l373"><span class="ln">373  </span></a>        </span><span class="s0">#else:</span><span class="s1"> 
+<a name="l374"><span class="ln">374  </span></a>        </span><span class="s2">except</span><span class="s1">: 
+<a name="l375"><span class="ln">375  </span></a>            duration = datetime.timedelta(minutes=int(duration[</span><span class="s4">0</span><span class="s1">])) 
+<a name="l376"><span class="ln">376  </span></a> 
+<a name="l377"><span class="ln">377  </span></a>        </span><span class="s2">if </span><span class="s1">self.quote: 
+<a name="l378"><span class="ln">378  </span></a>            delivery_datetime = datetime.datetime.combine(self.pickup_datetime.date()</span><span class="s6">,</span><span class="s1"> 
+<a name="l379"><span class="ln">379  </span></a>                                                          self.pickup_datetime.time()) + duration 
+<a name="l380"><span class="ln">380  </span></a>            self.delivery_datetime = delivery_datetime 
+<a name="l381"><span class="ln">381  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l382"><span class="ln">382  </span></a>            delivery_datetime = datetime.datetime.combine(self.order.pickup_time.date()</span><span class="s6">,</span><span class="s1"> 
+<a name="l383"><span class="ln">383  </span></a>                                                          self.order.pickup_time.time()) + duration 
+<a name="l384"><span class="ln">384  </span></a>            self.order.update_record(delivery_time=delivery_datetime) 
+<a name="l385"><span class="ln">385  </span></a>        </span><span class="s2">return </span><span class="s1">True 
+<a name="l386"><span class="ln">386  </span></a> 
+<a name="l387"><span class="ln">387  </span></a> 
+<a name="l388"><span class="ln">388  </span></a>    </span><span class="s2">def </span><span class="s1">get_origin(self): 
+<a name="l389"><span class="ln">389  </span></a>        </span><span class="s2">try</span><span class="s1">: 
+<a name="l390"><span class="ln">390  </span></a>            row = current.db(current.db.origin.order_id == self.order_id).select().last() 
+<a name="l391"><span class="ln">391  </span></a>            self.origin = row 
+<a name="l392"><span class="ln">392  </span></a>            </span><span class="s2">return </span><span class="s1">row 
+<a name="l393"><span class="ln">393  </span></a>        </span><span class="s2">except</span><span class="s1">: 
+<a name="l394"><span class="ln">394  </span></a>            </span><span class="s2">return </span><span class="s1">None 
+<a name="l395"><span class="ln">395  </span></a> 
+<a name="l396"><span class="ln">396  </span></a>    </span><span class="s2">def </span><span class="s1">set_origin(self): 
+<a name="l397"><span class="ln">397  </span></a>        self.origin = self.get_origin() 
+<a name="l398"><span class="ln">398  </span></a> 
+<a name="l399"><span class="ln">399  </span></a>        </span><span class="s2">if </span><span class="s1">self.origin </span><span class="s2">is </span><span class="s1">None: 
+<a name="l400"><span class="ln">400  </span></a>            </span><span class="s2">if not </span><span class="s1">self.shipper_info: 
+<a name="l401"><span class="ln">401  </span></a>                self.shipper_info = self.get_shipper_info() </span><span class="s0"># &lt;-- current.db(current.db.shipper_info.user_id == current.auth.user_id).select(cacheable=True).first()</span><span class="s1"> 
+<a name="l402"><span class="ln">402  </span></a> 
+<a name="l403"><span class="ln">403  </span></a>            </span><span class="s0"># set default values</span><span class="s1"> 
+<a name="l404"><span class="ln">404  </span></a>            </span><span class="s2">if </span><span class="s1">self.shipper_info: 
+<a name="l405"><span class="ln">405  </span></a>                current.db.origin.contact_name.default = self.shipper_info.first_name + </span><span class="s3">' ' </span><span class="s1">+ self.shipper_info.last_name 
+<a name="l406"><span class="ln">406  </span></a>                current.db.origin.address_1.default = self.shipper_info.address_1 
+<a name="l407"><span class="ln">407  </span></a>                current.db.origin.city.default = self.shipper_info.city 
+<a name="l408"><span class="ln">408  </span></a>                current.db.origin.us_state.default = self.shipper_info.us_state 
+<a name="l409"><span class="ln">409  </span></a>                current.db.origin.zip_code.default = self.shipper_info.zip_code 
+<a name="l410"><span class="ln">410  </span></a>                current.db.origin.phone.default = self.shipper_info.phone 
+<a name="l411"><span class="ln">411  </span></a>                current.db.origin.country.default = </span><span class="s3">'US'</span><span class="s1"> 
+<a name="l412"><span class="ln">412  </span></a> 
+<a name="l413"><span class="ln">413  </span></a>            time = datetime.datetime.strftime(current.request.now</span><span class="s6">, </span><span class="s3">'%I:%M %p'</span><span class="s1">) 
+<a name="l414"><span class="ln">414  </span></a>            current.db.origin.account_type.default = </span><span class="s3">'Residence'</span><span class="s1"> 
+<a name="l415"><span class="ln">415  </span></a>            current.db.origin.order_id.default = self.order_id 
+<a name="l416"><span class="ln">416  </span></a>            current.db.origin.shipment_ready_date.default = current.request.now.date() 
+<a name="l417"><span class="ln">417  </span></a>            current.db.origin.shipment_ready_time.default = time 
+<a name="l418"><span class="ln">418  </span></a> 
+<a name="l419"><span class="ln">419  </span></a>            form_origin = SQLFORM(current.db.origin</span><span class="s6">, </span><span class="s1">formstyle=</span><span class="s3">'bootstrap3'</span><span class="s1">) 
+<a name="l420"><span class="ln">420  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l421"><span class="ln">421  </span></a>            form_origin = SQLFORM(current.db.origin</span><span class="s6">, </span><span class="s1">self.origin.id</span><span class="s6">, </span><span class="s1">formstyle=</span><span class="s3">'bootstrap3'</span><span class="s1">) 
+<a name="l422"><span class="ln">422  </span></a> 
+<a name="l423"><span class="ln">423  </span></a>        </span><span class="s0"># extra styling</span><span class="s1"> 
+<a name="l424"><span class="ln">424  </span></a>        form_origin.custom.submit[</span><span class="s3">'_class'</span><span class="s1">] = </span><span class="s3">'btn btn-success'</span><span class="s1"> 
+<a name="l425"><span class="ln">425  </span></a>        form_origin.element(</span><span class="s3">'input[name=shipment_ready_date]'</span><span class="s1">)[</span><span class="s3">'_class'</span><span class="s1">] = </span><span class="s3">'form-control date'</span><span class="s1"> 
+<a name="l426"><span class="ln">426  </span></a>        form_origin.element(</span><span class="s3">'input[name=business_open_time]'</span><span class="s1">)[</span><span class="s3">'_class'</span><span class="s1">] = </span><span class="s3">'form-control time'</span><span class="s1"> 
+<a name="l427"><span class="ln">427  </span></a>        form_origin.element(</span><span class="s3">'input[name=business_close_time]'</span><span class="s1">)[</span><span class="s3">'_class'</span><span class="s1">] = </span><span class="s3">'form-control time'</span><span class="s1"> 
+<a name="l428"><span class="ln">428  </span></a>        form_origin.element(</span><span class="s3">'input[name=shipment_ready_time]'</span><span class="s1">)[</span><span class="s3">'_class'</span><span class="s1">] = </span><span class="s3">'form-control time'</span><span class="s1"> 
+<a name="l429"><span class="ln">429  </span></a>        form_origin.custom.submit.attributes[</span><span class="s3">'_value'</span><span class="s1">] = </span><span class="s3">'Continue'</span><span class="s1"> 
+<a name="l430"><span class="ln">430  </span></a> 
+<a name="l431"><span class="ln">431  </span></a>        </span><span class="s2">if </span><span class="s1">form_origin.process().accepted: 
+<a name="l432"><span class="ln">432  </span></a>            self.origin = self.get_origin() 
+<a name="l433"><span class="ln">433  </span></a>            self.update_timezone(</span><span class="s3">'origin'</span><span class="s1">) 
+<a name="l434"><span class="ln">434  </span></a>            self.set_pickup_time() 
+<a name="l435"><span class="ln">435  </span></a>            current.response.js = </span><span class="s3">&quot;collapse1()&quot;</span><span class="s1"> 
+<a name="l436"><span class="ln">436  </span></a> 
+<a name="l437"><span class="ln">437  </span></a>        </span><span class="s2">return </span><span class="s1">form_origin 
+<a name="l438"><span class="ln">438  </span></a> 
+<a name="l439"><span class="ln">439  </span></a>    </span><span class="s0">#input location name</span><span class="s1"> 
+<a name="l440"><span class="ln">440  </span></a>    </span><span class="s0">#output: lat, lng</span><span class="s1"> 
+<a name="l441"><span class="ln">441  </span></a>    </span><span class="s2">def </span><span class="s1">geocode(self</span><span class="s6">, </span><span class="s1">location): 
+<a name="l442"><span class="ln">442  </span></a>        url = </span><span class="s3">'https://maps.googleapis.com/maps/api/geocode/json?address=' </span><span class="s1">+ location + </span><span class="s3">'&amp;sensor=true_or_false&amp;key=AIzaSyC5tj3ulnc4nZCQR1ui1ZAqpdaxpCU9wYA'</span><span class="s1"> 
+<a name="l443"><span class="ln">443  </span></a>        r = requests.get(url) 
+<a name="l444"><span class="ln">444  </span></a>        json = r.json() 
+<a name="l445"><span class="ln">445  </span></a>        loc = json[</span><span class="s3">'results'</span><span class="s1">][</span><span class="s4">0</span><span class="s1">][</span><span class="s3">'geometry'</span><span class="s1">][</span><span class="s3">'location'</span><span class="s1">] 
+<a name="l446"><span class="ln">446  </span></a>        </span><span class="s2">return </span><span class="s1">loc 
+<a name="l447"><span class="ln">447  </span></a> 
+<a name="l448"><span class="ln">448  </span></a>    </span><span class="s2">def </span><span class="s1">get_destination(self): 
+<a name="l449"><span class="ln">449  </span></a>        </span><span class="s2">try</span><span class="s1">: 
+<a name="l450"><span class="ln">450  </span></a>            row = current.db(current.db.destination.order_id == self.order_id).select().last() 
+<a name="l451"><span class="ln">451  </span></a>            </span><span class="s2">return </span><span class="s1">row 
+<a name="l452"><span class="ln">452  </span></a>        </span><span class="s2">except</span><span class="s1">: 
+<a name="l453"><span class="ln">453  </span></a>            </span><span class="s2">return </span><span class="s1">None 
+<a name="l454"><span class="ln">454  </span></a> 
+<a name="l455"><span class="ln">455  </span></a>    </span><span class="s2">def </span><span class="s1">set_distance(self): 
+<a name="l456"><span class="ln">456  </span></a>        distance = self.get_distance(self.origin_latlng</span><span class="s6">, </span><span class="s1">self.destination_latlng) 
+<a name="l457"><span class="ln">457  </span></a>        self.distance = distance 
+<a name="l458"><span class="ln">458  </span></a> 
+<a name="l459"><span class="ln">459  </span></a>    </span><span class="s2">def </span><span class="s1">set_destination(self): 
+<a name="l460"><span class="ln">460  </span></a>        </span><span class="s2">import </span><span class="s1">datetime 
+<a name="l461"><span class="ln">461  </span></a>        self.destination = self.get_destination() 
+<a name="l462"><span class="ln">462  </span></a>        </span><span class="s2">if </span><span class="s1">self.destination </span><span class="s2">is </span><span class="s1">None: 
+<a name="l463"><span class="ln">463  </span></a> 
+<a name="l464"><span class="ln">464  </span></a>            </span><span class="s0"># set default values</span><span class="s1"> 
+<a name="l465"><span class="ln">465  </span></a>            current.db.destination.account_type.default = </span><span class="s3">'Residence'</span><span class="s1"> 
+<a name="l466"><span class="ln">466  </span></a>            current.db.destination.order_id.default = self.order_id 
+<a name="l467"><span class="ln">467  </span></a>            current.db.destination.shipment_delivery_date.default = current.request.now.date() 
+<a name="l468"><span class="ln">468  </span></a>            rnow = current.request.now 
+<a name="l469"><span class="ln">469  </span></a>            dnow = datetime.datetime.now 
+<a name="l470"><span class="ln">470  </span></a>            </span><span class="s0">#time = datetime.datetime.strftime(current.request.now, '%I:%M %p')</span><span class="s1"> 
+<a name="l471"><span class="ln">471  </span></a>            time = datetime.datetime.strftime(datetime.datetime.now()</span><span class="s6">, </span><span class="s3">'%I:%M %p'</span><span class="s1">) 
+<a name="l472"><span class="ln">472  </span></a>            current.db.destination.shipment_delivery_time.default = time 
+<a name="l473"><span class="ln">473  </span></a>            form_destination = SQLFORM(current.db.destination</span><span class="s6">, </span><span class="s1">formstyle=</span><span class="s3">'bootstrap3'</span><span class="s1">) 
+<a name="l474"><span class="ln">474  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l475"><span class="ln">475  </span></a>            form_destination = SQLFORM(current.db.destination</span><span class="s6">, </span><span class="s1">self.destination.id</span><span class="s6">, </span><span class="s1">formstyle=</span><span class="s3">'bootstrap3'</span><span class="s1">) 
+<a name="l476"><span class="ln">476  </span></a> 
+<a name="l477"><span class="ln">477  </span></a>        </span><span class="s0"># extra styling</span><span class="s1"> 
+<a name="l478"><span class="ln">478  </span></a>        form_destination.element(</span><span class="s3">'input[name=shipment_delivery_date]'</span><span class="s1">)[</span><span class="s3">'_class'</span><span class="s1">] = </span><span class="s3">'form-control date'</span><span class="s1"> 
+<a name="l479"><span class="ln">479  </span></a>        form_destination.element(</span><span class="s3">'input[name=business_open_time]'</span><span class="s1">)[</span><span class="s3">'_class'</span><span class="s1">] = </span><span class="s3">'form-control time'</span><span class="s1"> 
+<a name="l480"><span class="ln">480  </span></a>        form_destination.element(</span><span class="s3">'input[name=business_close_time]'</span><span class="s1">)[</span><span class="s3">'_class'</span><span class="s1">] = </span><span class="s3">'form-control time'</span><span class="s1"> 
+<a name="l481"><span class="ln">481  </span></a>        form_destination.element(</span><span class="s3">'input[name=shipment_delivery_time]'</span><span class="s1">)[</span><span class="s3">'_class'</span><span class="s1">] = </span><span class="s3">'form-control time'</span><span class="s1"> 
+<a name="l482"><span class="ln">482  </span></a>        form_destination.custom.submit[</span><span class="s3">'_class'</span><span class="s1">] = </span><span class="s3">'btn btn-success fill-width'</span><span class="s1"> 
+<a name="l483"><span class="ln">483  </span></a>        form_destination.custom.submit.attributes[</span><span class="s3">'_value'</span><span class="s1">] = </span><span class="s3">'Continue'</span><span class="s1"> 
+<a name="l484"><span class="ln">484  </span></a>        self.dest_cache = str(current.auth.user_id) + </span><span class="s3">'destination'</span><span class="s1"> 
+<a name="l485"><span class="ln">485  </span></a>        </span><span class="s0">#current.mc.set(self.dest_cache,self.destination)</span><span class="s1"> 
+<a name="l486"><span class="ln">486  </span></a>        </span><span class="s2">if </span><span class="s1">form_destination.process().accepted: 
+<a name="l487"><span class="ln">487  </span></a>            self.destination = self.get_destination() 
+<a name="l488"><span class="ln">488  </span></a>            current.mc.set(self.dest_cache</span><span class="s6">,</span><span class="s1">self.destination) 
+<a name="l489"><span class="ln">489  </span></a>            self.update_timezone(</span><span class="s3">'destination'</span><span class="s1">) 
+<a name="l490"><span class="ln">490  </span></a>            </span><span class="s2">if </span><span class="s1">self.is_ground(): 
+<a name="l491"><span class="ln">491  </span></a>                self.set_dropoff_time()  </span><span class="s0">#set dropoff time for ground</span><span class="s1"> 
+<a name="l492"><span class="ln">492  </span></a>            current.response.js = </span><span class="s3">&quot;collapse2()&quot;</span><span class="s1"> 
+<a name="l493"><span class="ln">493  </span></a>        </span><span class="s2">return </span><span class="s1">form_destination 
+<a name="l494"><span class="ln">494  </span></a> 
+<a name="l495"><span class="ln">495  </span></a>    </span><span class="s2">def </span><span class="s1">get_contents(self): 
+<a name="l496"><span class="ln">496  </span></a>        </span><span class="s2">try</span><span class="s1">: 
+<a name="l497"><span class="ln">497  </span></a>            contents = current.db(current.db.contents.order_id == self.order_id).select() 
+<a name="l498"><span class="ln">498  </span></a>            </span><span class="s2">return </span><span class="s1">contents 
+<a name="l499"><span class="ln">499  </span></a>        </span><span class="s2">except</span><span class="s1">: 
+<a name="l500"><span class="ln">500  </span></a>            </span><span class="s2">return </span><span class="s1">None 
+<a name="l501"><span class="ln">501  </span></a> 
+<a name="l502"><span class="ln">502  </span></a>    </span><span class="s2">def </span><span class="s1">set_contents(self): 
+<a name="l503"><span class="ln">503  </span></a>        current.db.contents.order_id.default = self.order_id 
+<a name="l504"><span class="ln">504  </span></a>        form_contents = SQLFORM(current.db.contents</span><span class="s6">, </span><span class="s1">formstyle=</span><span class="s3">&quot;bootstrap3&quot;</span><span class="s1">) 
+<a name="l505"><span class="ln">505  </span></a>        form_contents.custom.submit[</span><span class="s3">'_class'</span><span class="s1">] = </span><span class="s3">'btn btn-success'</span><span class="s1"> 
+<a name="l506"><span class="ln">506  </span></a>        form_contents.custom.submit.attributes[</span><span class="s3">'_value'</span><span class="s1">] = </span><span class="s3">'Add'</span><span class="s1"> 
+<a name="l507"><span class="ln">507  </span></a> 
+<a name="l508"><span class="ln">508  </span></a>        self.contents = self.get_contents() 
+<a name="l509"><span class="ln">509  </span></a> 
+<a name="l510"><span class="ln">510  </span></a> 
+<a name="l511"><span class="ln">511  </span></a>        </span><span class="s2">if </span><span class="s1">form_contents.process().accepted: 
+<a name="l512"><span class="ln">512  </span></a> 
+<a name="l513"><span class="ln">513  </span></a>            </span><span class="s0"># if quantity &gt; 1, insert n contents and set quantity = 1</span><span class="s1"> 
+<a name="l514"><span class="ln">514  </span></a>            </span><span class="s2">for </span><span class="s1">content </span><span class="s2">in </span><span class="s1">self.contents: 
+<a name="l515"><span class="ln">515  </span></a>                </span><span class="s2">if </span><span class="s1">content.quantity &gt; </span><span class="s4">1</span><span class="s1">: 
+<a name="l516"><span class="ln">516  </span></a>                    n = content.quantity 
+<a name="l517"><span class="ln">517  </span></a>                    i = </span><span class="s4">1</span><span class="s1"> 
+<a name="l518"><span class="ln">518  </span></a>                    </span><span class="s2">while </span><span class="s1">i &lt; n: 
+<a name="l519"><span class="ln">519  </span></a>                        current.db.contents.insert( 
+<a name="l520"><span class="ln">520  </span></a>                            order_id=content.order_id</span><span class="s6">,</span><span class="s1"> 
+<a name="l521"><span class="ln">521  </span></a>                            user_id=content.user_id</span><span class="s6">,</span><span class="s1"> 
+<a name="l522"><span class="ln">522  </span></a>                            quantity=</span><span class="s4">1</span><span class="s6">,</span><span class="s1"> 
+<a name="l523"><span class="ln">523  </span></a>                            value=content.value</span><span class="s6">,</span><span class="s1"> 
+<a name="l524"><span class="ln">524  </span></a>                            package_length=content.package_length</span><span class="s6">,</span><span class="s1"> 
+<a name="l525"><span class="ln">525  </span></a>                            width=content.width</span><span class="s6">,</span><span class="s1"> 
+<a name="l526"><span class="ln">526  </span></a>                            height=content.height</span><span class="s6">,</span><span class="s1"> 
+<a name="l527"><span class="ln">527  </span></a>                            weight=content.weight</span><span class="s6">,</span><span class="s1"> 
+<a name="l528"><span class="ln">528  </span></a>                            packaging=content.packaging</span><span class="s6">,</span><span class="s1"> 
+<a name="l529"><span class="ln">529  </span></a>                            contents=content.contents</span><span class="s6">,</span><span class="s1"> 
+<a name="l530"><span class="ln">530  </span></a>                            dangerous=content.dangerous</span><span class="s6">,</span><span class="s1"> 
+<a name="l531"><span class="ln">531  </span></a>                            danger_info=content.danger_info 
+<a name="l532"><span class="ln">532  </span></a>                        ) 
+<a name="l533"><span class="ln">533  </span></a>                        i += </span><span class="s4">1</span><span class="s1"> 
+<a name="l534"><span class="ln">534  </span></a>                    content.update_record(quantity=</span><span class="s4">1</span><span class="s1">) 
+<a name="l535"><span class="ln">535  </span></a> 
+<a name="l536"><span class="ln">536  </span></a>            current.session.flash = </span><span class="s3">'Item added!'</span><span class="s1"> 
+<a name="l537"><span class="ln">537  </span></a>        </span><span class="s2">elif </span><span class="s1">form_contents.errors: 
+<a name="l538"><span class="ln">538  </span></a>            current.session.flash = </span><span class="s3">'Unable to add shipment'</span><span class="s1"> 
+<a name="l539"><span class="ln">539  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l540"><span class="ln">540  </span></a>            None 
+<a name="l541"><span class="ln">541  </span></a>        </span><span class="s2">return </span><span class="s1">form_contents 
+<a name="l542"><span class="ln">542  </span></a> 
+<a name="l543"><span class="ln">543  </span></a> 
+<a name="l544"><span class="ln">544  </span></a>    </span><span class="s2">def </span><span class="s1">get_billing(self): 
+<a name="l545"><span class="ln">545  </span></a>        </span><span class="s2">try</span><span class="s1">: 
+<a name="l546"><span class="ln">546  </span></a>            </span><span class="s0">#user_id = current.auth.user_id</span><span class="s1"> 
+<a name="l547"><span class="ln">547  </span></a>            row = current.db(current.db.bill_to.order_id == self.order_id).select().last() 
+<a name="l548"><span class="ln">548  </span></a>            </span><span class="s0">#row = current.db(current.db.bill_to.user_id == int(str(self.order.user_id)[:1])).select().last()</span><span class="s1"> 
+<a name="l549"><span class="ln">549  </span></a>            </span><span class="s0">#row = current.db(current.db.cc_info.user_id == user_id).select().last()</span><span class="s1"> 
+<a name="l550"><span class="ln">550  </span></a>            </span><span class="s2">return </span><span class="s1">row 
+<a name="l551"><span class="ln">551  </span></a>        </span><span class="s2">except</span><span class="s1">: 
+<a name="l552"><span class="ln">552  </span></a>            </span><span class="s2">return </span><span class="s1">None 
+<a name="l553"><span class="ln">553  </span></a> 
+<a name="l554"><span class="ln">554  </span></a>    </span><span class="s2">def </span><span class="s1">check_cards(self): 
+<a name="l555"><span class="ln">555  </span></a>        bill_to = current.db.bill_to.user_id==current.auth.user_id 
+<a name="l556"><span class="ln">556  </span></a>        </span><span class="s0">#count = bill_to.order_id.count()</span><span class="s1"> 
+<a name="l557"><span class="ln">557  </span></a>        </span><span class="s0">#rtn = current.db(bill_to).select(bill_to.user_id,bill_to.order_id,count,groupby=bill_to.user_id|bill_to.order_id,having=count==1)</span><span class="s1"> 
+<a name="l558"><span class="ln">558  </span></a>        </span><span class="s0">#select = current.db(bill_to).select()</span><span class="s1"> 
+<a name="l559"><span class="ln">559  </span></a>        </span><span class="s0">#return current.db(current.db.cc_info.user_id==current.auth.user_id).select()</span><span class="s1"> 
+<a name="l560"><span class="ln">560  </span></a>        count = current.db(bill_to).count() 
+<a name="l561"><span class="ln">561  </span></a>        </span><span class="s2">return </span><span class="s1">self.get_billing() 
+<a name="l562"><span class="ln">562  </span></a>        </span><span class="s0">#rtn = current.db(bill_to).select(bill_to.user_id,bill_to.order_id,bill_to.card, count, groupby=bill_to.user_id|bill_to.order_id|bill_to.card, having=count==1)</span><span class="s1"> 
+<a name="l563"><span class="ln">563  </span></a>        </span><span class="s0">#return rtn</span><span class="s1"> 
+<a name="l564"><span class="ln">564  </span></a> 
+<a name="l565"><span class="ln">565  </span></a>    </span><span class="s2">def </span><span class="s1">set_billing(self): 
+<a name="l566"><span class="ln">566  </span></a>        self.billing = self.get_billing() </span><span class="s0">#can't set billing if they havent even pressed the submit button #$ original</span><span class="s1"> 
+<a name="l567"><span class="ln">567  </span></a> 
+<a name="l568"><span class="ln">568  </span></a>        </span><span class="s0">#if the user has not finished their order we want prefill with their old choice</span><span class="s1"> 
+<a name="l569"><span class="ln">569  </span></a>        </span><span class="s2">if </span><span class="s1">self.billing </span><span class="s2">is </span><span class="s1">None: 
+<a name="l570"><span class="ln">570  </span></a>            current.db.bill_to.order_id.default = self.order_id 
+<a name="l571"><span class="ln">571  </span></a>            current.db.bill_to.user_id.default = current.auth.user_id 
+<a name="l572"><span class="ln">572  </span></a>            form_bill = SQLFORM(current.db.bill_to</span><span class="s6">, </span><span class="s1">formstyle=</span><span class="s3">&quot;bootstrap3&quot;</span><span class="s1">) 
+<a name="l573"><span class="ln">573  </span></a>            form_bill.custom.submit[</span><span class="s3">'_class'</span><span class="s1">] = </span><span class="s3">'btn btn-success'</span><span class="s1"> 
+<a name="l574"><span class="ln">574  </span></a>            form_bill.custom.submit.attributes[</span><span class="s3">'_value'</span><span class="s1">] = </span><span class="s3">'Continue'</span><span class="s1"> 
+<a name="l575"><span class="ln">575  </span></a>            </span><span class="s2">if </span><span class="s1">form_bill.process(keepvalues=True).accepted: 
+<a name="l576"><span class="ln">576  </span></a>                self.billing = self.get_billing() 
+<a name="l577"><span class="ln">577  </span></a>                current.response.js = </span><span class="s3">&quot;collapse4()&quot;</span><span class="s1"> 
+<a name="l578"><span class="ln">578  </span></a> 
+<a name="l579"><span class="ln">579  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l580"><span class="ln">580  </span></a>            form_bill = SQLFORM(current.db.bill_to</span><span class="s6">, </span><span class="s1">self.billing.id</span><span class="s6">, </span><span class="s1">formstyle=</span><span class="s3">&quot;bootstrap3&quot;</span><span class="s1">) 
+<a name="l581"><span class="ln">581  </span></a>            </span><span class="s0">#form_bill = SQLFORM(current.db.cc_info, self.billing.id, formstyle=&quot;bootstrap3&quot;)</span><span class="s1"> 
+<a name="l582"><span class="ln">582  </span></a>            form_bill.custom.submit[</span><span class="s3">'_class'</span><span class="s1">] = </span><span class="s3">'btn btn-success'</span><span class="s1"> 
+<a name="l583"><span class="ln">583  </span></a>            form_bill.custom.submit.attributes[</span><span class="s3">'_value'</span><span class="s1">] = </span><span class="s3">'Continue'</span><span class="s1"> 
+<a name="l584"><span class="ln">584  </span></a>            </span><span class="s2">if </span><span class="s1">form_bill.process().accepted: 
+<a name="l585"><span class="ln">585  </span></a>                </span><span class="s0">#self.billing = self.get_billing()</span><span class="s1"> 
+<a name="l586"><span class="ln">586  </span></a>                current.response.js = </span><span class="s3">&quot;collapse4()&quot;</span><span class="s1"> 
+<a name="l587"><span class="ln">587  </span></a> 
+<a name="l588"><span class="ln">588  </span></a>        </span><span class="s2">return </span><span class="s1">form_bill 
+<a name="l589"><span class="ln">589  </span></a> 
+<a name="l590"><span class="ln">590  </span></a>    </span><span class="s2">def </span><span class="s1">notification_validation(self</span><span class="s6">, </span><span class="s1">form_notifications): 
+<a name="l591"><span class="ln">591  </span></a>        </span><span class="s2">if </span><span class="s1">form_notifications.vars.notifications == </span><span class="s3">'yes'</span><span class="s1">: 
+<a name="l592"><span class="ln">592  </span></a>            </span><span class="s2">if </span><span class="s1">form_notifications.vars.shipper_email == </span><span class="s3">''</span><span class="s1">: 
+<a name="l593"><span class="ln">593  </span></a>                form_notifications.errors.shipper_email = </span><span class="s3">&quot;Please enter a valid email address&quot;</span><span class="s1"> 
+<a name="l594"><span class="ln">594  </span></a> 
+<a name="l595"><span class="ln">595  </span></a>            </span><span class="s2">if </span><span class="s1">form_notifications.vars.shipper_sms == </span><span class="s3">'' </span><span class="s2">or </span><span class="s1">len(form_notifications.vars.shipper_sms) != </span><span class="s4">10</span><span class="s1">: 
+<a name="l596"><span class="ln">596  </span></a>                form_notifications.errors.shipper_sms = </span><span class="s3">&quot;Please enter a valid phone number&quot;</span><span class="s1"> 
+<a name="l597"><span class="ln">597  </span></a>            </span><span class="s2">else</span><span class="s1">: 
+<a name="l598"><span class="ln">598  </span></a>                </span><span class="s2">if </span><span class="s1">form_notifications.vars.shipper_provider == </span><span class="s3">''</span><span class="s1">: 
+<a name="l599"><span class="ln">599  </span></a>                    form_notifications.errors.shipper_provider = </span><span class="s3">&quot;Please enter a valid provider&quot;</span><span class="s1"> 
+<a name="l600"><span class="ln">600  </span></a> 
+<a name="l601"><span class="ln">601  </span></a>            </span><span class="s2">if </span><span class="s1">form_notifications.vars.recipient_email == </span><span class="s3">''</span><span class="s1">: 
+<a name="l602"><span class="ln">602  </span></a>                form_notifications.errors.recipient_email = </span><span class="s3">&quot;Please enter a valid email address&quot;</span><span class="s1"> 
+<a name="l603"><span class="ln">603  </span></a> 
+<a name="l604"><span class="ln">604  </span></a>            </span><span class="s2">if </span><span class="s1">form_notifications.vars.recipient_sms == </span><span class="s3">'' </span><span class="s2">or </span><span class="s1">len(form_notifications.vars.recipient_sms) != </span><span class="s4">10</span><span class="s1">: 
+<a name="l605"><span class="ln">605  </span></a>                form_notifications.errors.recipient_sms = </span><span class="s3">&quot;Please enter a valid phone number&quot;</span><span class="s1"> 
+<a name="l606"><span class="ln">606  </span></a>            </span><span class="s2">else</span><span class="s1">: 
+<a name="l607"><span class="ln">607  </span></a>                </span><span class="s2">if </span><span class="s1">form_notifications.vars.recipient_provider == </span><span class="s3">''</span><span class="s1">: 
+<a name="l608"><span class="ln">608  </span></a>                    form_notifications.errors.recipient_provider = </span><span class="s3">&quot;Please enter a valid provider&quot;</span><span class="s1"> 
+<a name="l609"><span class="ln">609  </span></a> 
+<a name="l610"><span class="ln">610  </span></a>    </span><span class="s2">def </span><span class="s1">get_notifications(self): 
+<a name="l611"><span class="ln">611  </span></a>        </span><span class="s2">try</span><span class="s1">: 
+<a name="l612"><span class="ln">612  </span></a>            row = current.db(current.db.notifications_order.order_id == self.order_id).select().last() 
+<a name="l613"><span class="ln">613  </span></a>            </span><span class="s2">return </span><span class="s1">row 
+<a name="l614"><span class="ln">614  </span></a>        </span><span class="s2">except</span><span class="s1">: 
+<a name="l615"><span class="ln">615  </span></a>            </span><span class="s2">return </span><span class="s1">None 
+<a name="l616"><span class="ln">616  </span></a> 
+<a name="l617"><span class="ln">617  </span></a> 
+<a name="l618"><span class="ln">618  </span></a>    </span><span class="s2">def </span><span class="s1">get_registration_notifications(self): 
+<a name="l619"><span class="ln">619  </span></a>        </span><span class="s2">try</span><span class="s1">: 
+<a name="l620"><span class="ln">620  </span></a>            row = current.db(current.db.notifications_registration.user_id == current.auth.user_id).select().last() 
+<a name="l621"><span class="ln">621  </span></a>            </span><span class="s2">return </span><span class="s1">row 
+<a name="l622"><span class="ln">622  </span></a>        </span><span class="s2">except</span><span class="s1">: 
+<a name="l623"><span class="ln">623  </span></a>            </span><span class="s2">return </span><span class="s1">None 
+<a name="l624"><span class="ln">624  </span></a> 
+<a name="l625"><span class="ln">625  </span></a>    </span><span class="s2">def </span><span class="s1">get_shipper_info(self): 
+<a name="l626"><span class="ln">626  </span></a> 
+<a name="l627"><span class="ln">627  </span></a>        </span><span class="s0">#this does the same thing as below but doesn't remove the &quot;L&quot; from the user id</span><span class="s1"> 
+<a name="l628"><span class="ln">628  </span></a>        </span><span class="s0">#shipper = current.db(current.db.shipper_info.user_id == current.auth.user_id).select(cacheable=True).first()</span><span class="s1"> 
+<a name="l629"><span class="ln">629  </span></a> 
+<a name="l630"><span class="ln">630  </span></a>        user_id = str(current.auth.user_id)[:</span><span class="s4">1</span><span class="s1">] 
+<a name="l631"><span class="ln">631  </span></a>        shipper = current.db(current.db.shipper_info.user_id == user_id).select().first() 
+<a name="l632"><span class="ln">632  </span></a>        </span><span class="s2">if </span><span class="s1">shipper: 
+<a name="l633"><span class="ln">633  </span></a>            </span><span class="s2">return </span><span class="s1">shipper 
+<a name="l634"><span class="ln">634  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l635"><span class="ln">635  </span></a>            </span><span class="s2">return </span><span class="s1">None 
+<a name="l636"><span class="ln">636  </span></a> 
+<a name="l637"><span class="ln">637  </span></a>    </span><span class="s2">def </span><span class="s1">set_notifications(self): 
+<a name="l638"><span class="ln">638  </span></a>        </span><span class="s2">if </span><span class="s1">self.shipper_info </span><span class="s2">is </span><span class="s1">None: 
+<a name="l639"><span class="ln">639  </span></a>            self.shipper_info = self.get_shipper_info() 
+<a name="l640"><span class="ln">640  </span></a> 
+<a name="l641"><span class="ln">641  </span></a>        self.notifications = self.get_notifications() </span><span class="s0"># grabs from notification_orders table</span><span class="s1"> 
+<a name="l642"><span class="ln">642  </span></a> 
+<a name="l643"><span class="ln">643  </span></a>        </span><span class="s2">if </span><span class="s1">self.notifications </span><span class="s2">is </span><span class="s1">None: </span><span class="s0">#&lt;-- if the user has not started the process of creating an order</span><span class="s1"> 
+<a name="l644"><span class="ln">644  </span></a>            </span><span class="s0"># set defaults using shipper_info from registration</span><span class="s1"> 
+<a name="l645"><span class="ln">645  </span></a>            </span><span class="s2">if </span><span class="s1">self.shipper_info: </span><span class="s0">#&lt; -- we can also use notification_registration table to auto fill this form</span><span class="s1"> 
+<a name="l646"><span class="ln">646  </span></a>                current.db.notifications_order.order_id.default = self.order_id 
+<a name="l647"><span class="ln">647  </span></a>                current.db.notifications_order.shipper_email.default = self.shipper_info.email 
+<a name="l648"><span class="ln">648  </span></a>                current.db.notifications_order.shipper_sms.default = self.shipper_info.mobile_phone 
+<a name="l649"><span class="ln">649  </span></a>                current.db.notifications_order.shipper_provider.default = self.shipper_info.provider 
+<a name="l650"><span class="ln">650  </span></a>                form_notifications = SQLFORM(current.db.notifications_order</span><span class="s6">, </span><span class="s1">formstyle=</span><span class="s3">&quot;bootstrap3&quot;</span><span class="s1">) 
+<a name="l651"><span class="ln">651  </span></a>            </span><span class="s2">else</span><span class="s1">: 
+<a name="l652"><span class="ln">652  </span></a>                current.db.notifications_order.order_id.default = self.order_id 
+<a name="l653"><span class="ln">653  </span></a>                form_notifications = SQLFORM(current.db.notifications_order</span><span class="s6">, </span><span class="s1">formstyle=</span><span class="s3">&quot;bootstrap3&quot;</span><span class="s1">) 
+<a name="l654"><span class="ln">654  </span></a> 
+<a name="l655"><span class="ln">655  </span></a>        </span><span class="s2">else</span><span class="s1">: </span><span class="s0">#if the user has already started the process of creating an order prefill form with old info</span><span class="s1"> 
+<a name="l656"><span class="ln">656  </span></a>            </span><span class="s2">if </span><span class="s1">self.order_id: 
+<a name="l657"><span class="ln">657  </span></a>                </span><span class="s0"># must use notifications.id to prefill form</span><span class="s1"> 
+<a name="l658"><span class="ln">658  </span></a>                form_notifications = SQLFORM(current.db.notifications_order</span><span class="s6">,</span><span class="s1">str(self.notifications.id)</span><span class="s6">, </span><span class="s1">formstyle=</span><span class="s3">&quot;bootstrap3&quot;</span><span class="s1">) 
+<a name="l659"><span class="ln">659  </span></a>            </span><span class="s2">else</span><span class="s1">: 
+<a name="l660"><span class="ln">660  </span></a>                current.db.notifications_order.order_id.default = self.order_id 
+<a name="l661"><span class="ln">661  </span></a>                current.db.notifications_order.shipper_email.default = self.shipper_info.email 
+<a name="l662"><span class="ln">662  </span></a>                current.db.notifications_order.shipper_sms.default = self.shipper_info.mobile_phone 
+<a name="l663"><span class="ln">663  </span></a>                current.db.notifications_order.shipper_provider.default = self.shipper_info.provider 
+<a name="l664"><span class="ln">664  </span></a>                form_notifications = SQLFORM(current.db.notifications_order</span><span class="s6">, </span><span class="s1">formstyle=</span><span class="s3">&quot;bootstrap3&quot;</span><span class="s1">) 
+<a name="l665"><span class="ln">665  </span></a> 
+<a name="l666"><span class="ln">666  </span></a>        form_notifications.custom.submit[</span><span class="s3">'_class'</span><span class="s1">] = </span><span class="s3">'btn btn-success'</span><span class="s1"> 
+<a name="l667"><span class="ln">667  </span></a>        form_notifications.custom.submit[</span><span class="s3">'_value'</span><span class="s1">] = </span><span class="s3">'Continue'</span><span class="s1"> 
+<a name="l668"><span class="ln">668  </span></a> 
+<a name="l669"><span class="ln">669  </span></a>        </span><span class="s2">if </span><span class="s1">form_notifications.process(onvalidation=self.notification_validation(form_notifications)).accepted: 
+<a name="l670"><span class="ln">670  </span></a>            user = current.db.auth_user[current.auth.user_id] 
+<a name="l671"><span class="ln">671  </span></a>            user.update_record(phase=</span><span class="s3">'complete'</span><span class="s1">) 
+<a name="l672"><span class="ln">672  </span></a>            self.notifications = self.get_notifications() 
+<a name="l673"><span class="ln">673  </span></a>            current.response.js = </span><span class="s3">&quot;collapse5()&quot;</span><span class="s1"> 
+<a name="l674"><span class="ln">674  </span></a> 
+<a name="l675"><span class="ln">675  </span></a>        </span><span class="s2">return </span><span class="s1">form_notifications 
+<a name="l676"><span class="ln">676  </span></a> 
+<a name="l677"><span class="ln">677  </span></a> 
+<a name="l678"><span class="ln">678  </span></a>    </span><span class="s2">def </span><span class="s1">get_contact(self): 
+<a name="l679"><span class="ln">679  </span></a>        </span><span class="s2">try</span><span class="s1">: 
+<a name="l680"><span class="ln">680  </span></a>            row = current.db(current.db.contact_info.order_id == self.order_id).select().last() 
+<a name="l681"><span class="ln">681  </span></a>            </span><span class="s2">return </span><span class="s1">row 
+<a name="l682"><span class="ln">682  </span></a>        </span><span class="s2">except</span><span class="s1">: 
+<a name="l683"><span class="ln">683  </span></a>            </span><span class="s2">return </span><span class="s1">None 
+<a name="l684"><span class="ln">684  </span></a> 
+<a name="l685"><span class="ln">685  </span></a>    </span><span class="s2">def </span><span class="s1">set_contact(self): 
+<a name="l686"><span class="ln">686  </span></a>        </span><span class="s0">#self.contact_info = self.get_contact() #$ put this in form.process.accept so it updates the db after form is submitted</span><span class="s1"> 
+<a name="l687"><span class="ln">687  </span></a> 
+<a name="l688"><span class="ln">688  </span></a>        </span><span class="s2">if </span><span class="s1">self.shipper_info </span><span class="s2">is </span><span class="s1">None: 
+<a name="l689"><span class="ln">689  </span></a>            self.shipper_info = self.get_shipper_info() 
+<a name="l690"><span class="ln">690  </span></a> 
+<a name="l691"><span class="ln">691  </span></a>        </span><span class="s0">#if self.contact_info is None:</span><span class="s1"> 
+<a name="l692"><span class="ln">692  </span></a>        </span><span class="s2">if </span><span class="s1">self.shipper_info: 
+<a name="l693"><span class="ln">693  </span></a>            </span><span class="s0"># set defaults</span><span class="s1"> 
+<a name="l694"><span class="ln">694  </span></a>            current.db.contact_info.name.default = self.shipper_info.first_name + </span><span class="s3">' ' </span><span class="s1">+ self.shipper_info.last_name 
+<a name="l695"><span class="ln">695  </span></a>            current.db.contact_info.email.default = self.shipper_info.email 
+<a name="l696"><span class="ln">696  </span></a>            current.db.contact_info.phone.default = self.shipper_info.phone 
+<a name="l697"><span class="ln">697  </span></a> 
+<a name="l698"><span class="ln">698  </span></a>        current.db.contact_info.order_id.default = self.order_id 
+<a name="l699"><span class="ln">699  </span></a>        form_contact = SQLFORM(current.db.contact_info</span><span class="s6">, </span><span class="s1">formstyle=</span><span class="s3">&quot;bootstrap3&quot;</span><span class="s1">) </span><span class="s0">#prefill form</span><span class="s1"> 
+<a name="l700"><span class="ln">700  </span></a> 
+<a name="l701"><span class="ln">701  </span></a>        </span><span class="s0">#else:</span><span class="s1"> 
+<a name="l702"><span class="ln">702  </span></a>        </span><span class="s0">#    form_contact = SQLFORM(current.db.contact_info, self.contact_info.id, formstyle=&quot;bootstrap3&quot;) #prefill form</span><span class="s1"> 
+<a name="l703"><span class="ln">703  </span></a> 
+<a name="l704"><span class="ln">704  </span></a>        form_contact.custom.submit[</span><span class="s3">'_id'</span><span class="s1">] = </span><span class="s3">'loading'</span><span class="s1"> 
+<a name="l705"><span class="ln">705  </span></a>        form_contact.custom.submit[</span><span class="s3">'_class'</span><span class="s1">] = </span><span class="s3">'btn btn-success'</span><span class="s1"> 
+<a name="l706"><span class="ln">706  </span></a>        form_contact.custom.submit.attributes[</span><span class="s3">'_value'</span><span class="s1">] = </span><span class="s3">'Order Review'</span><span class="s1"> 
+<a name="l707"><span class="ln">707  </span></a>        form_contact.add_button(</span><span class="s3">'Save for later'</span><span class="s6">, </span><span class="s1">URL(</span><span class="s3">'default'</span><span class="s6">, </span><span class="s3">'index.html'</span><span class="s1">)</span><span class="s6">, </span><span class="s1">_class=</span><span class="s3">&quot;btn btn-primary&quot;</span><span class="s1">) 
+<a name="l708"><span class="ln">708  </span></a> 
+<a name="l709"><span class="ln">709  </span></a>        </span><span class="s0">#if form_contact.process().accepted:</span><span class="s1"> 
+<a name="l710"><span class="ln">710  </span></a>        </span><span class="s0">#    self.contact_info = self.get_contact()</span><span class="s1"> 
+<a name="l711"><span class="ln">711  </span></a>        </span><span class="s0">#    current.response.js = &quot;collapse6()&quot;</span><span class="s1"> 
+<a name="l712"><span class="ln">712  </span></a>        </span><span class="s0">#    return redirect(URL('flights', 'place_order.html'), client_side=True)</span><span class="s1"> 
+<a name="l713"><span class="ln">713  </span></a> 
+<a name="l714"><span class="ln">714  </span></a>        </span><span class="s2">return </span><span class="s1">form_contact 
+<a name="l715"><span class="ln">715  </span></a> 
+<a name="l716"><span class="ln">716  </span></a>    </span><span class="s0"># returns distance in miles between two addresses</span><span class="s1"> 
+<a name="l717"><span class="ln">717  </span></a>    </span><span class="s0"># input: two lists of lat,lng</span><span class="s1"> 
+<a name="l718"><span class="ln">718  </span></a>    </span><span class="s0"># output: distance in miles</span><span class="s1"> 
+<a name="l719"><span class="ln">719  </span></a>    </span><span class="s2">def </span><span class="s1">get_distance(self</span><span class="s6">, </span><span class="s1">origin</span><span class="s6">, </span><span class="s1">destination): 
+<a name="l720"><span class="ln">720  </span></a> 
+<a name="l721"><span class="ln">721  </span></a>        origin = str(origin[</span><span class="s3">'lat'</span><span class="s1">]) + </span><span class="s3">', ' </span><span class="s1">+ str(origin[</span><span class="s3">'lng'</span><span class="s1">]) 
+<a name="l722"><span class="ln">722  </span></a>        destination = str(destination[</span><span class="s3">'lat'</span><span class="s1">]) + </span><span class="s3">', ' </span><span class="s1">+ str(destination[</span><span class="s3">'lng'</span><span class="s1">]) 
+<a name="l723"><span class="ln">723  </span></a> 
+<a name="l724"><span class="ln">724  </span></a>        url = </span><span class="s3">'https://maps.googleapis.com/maps/api/distancematrix/json?origins=' </span><span class="s1">+ \ 
+<a name="l725"><span class="ln">725  </span></a>              origin + </span><span class="s3">'&amp;destinations=' </span><span class="s1">+ destination + \ 
+<a name="l726"><span class="ln">726  </span></a>              </span><span class="s3">'&amp;mode=driving&amp;language=en-EN&amp;sensor=false&amp;units=imperial&amp;key=' </span><span class="s1">+ self.google_key 
+<a name="l727"><span class="ln">727  </span></a>        r = requests.get(url) 
+<a name="l728"><span class="ln">728  </span></a>        json = r.json() 
+<a name="l729"><span class="ln">729  </span></a> 
+<a name="l730"><span class="ln">730  </span></a>        </span><span class="s2">try</span><span class="s1">: 
+<a name="l731"><span class="ln">731  </span></a>            distance = json[</span><span class="s3">'rows'</span><span class="s1">][</span><span class="s4">0</span><span class="s1">][</span><span class="s3">'elements'</span><span class="s1">][</span><span class="s4">0</span><span class="s1">][</span><span class="s3">'distance'</span><span class="s1">][</span><span class="s3">'text'</span><span class="s1">] 
+<a name="l732"><span class="ln">732  </span></a>            results = re.sub(</span><span class="s3">'[ ,mi]'</span><span class="s6">, </span><span class="s3">''</span><span class="s6">, </span><span class="s1">distance) 
+<a name="l733"><span class="ln">733  </span></a>        </span><span class="s2">except</span><span class="s1">: 
+<a name="l734"><span class="ln">734  </span></a>            results = </span><span class="s4">0</span><span class="s1"> 
+<a name="l735"><span class="ln">735  </span></a> 
+<a name="l736"><span class="ln">736  </span></a>        </span><span class="s2">return </span><span class="s1">results 
+<a name="l737"><span class="ln">737  </span></a> 
+<a name="l738"><span class="ln">738  </span></a>    </span><span class="s0"># rough estimate of time necessary to deliver package via car</span><span class="s1"> 
+<a name="l739"><span class="ln">739  </span></a>    </span><span class="s0"># should use gmaps api in future to account for traffic</span><span class="s1"> 
+<a name="l740"><span class="ln">740  </span></a>    </span><span class="s0"># input: distance in miles</span><span class="s1"> 
+<a name="l741"><span class="ln">741  </span></a>    </span><span class="s0"># output: time in minutes</span><span class="s1"> 
+<a name="l742"><span class="ln">742  </span></a>    </span><span class="s2">def </span><span class="s1">compute_time(distance): 
+<a name="l743"><span class="ln">743  </span></a>        total_time = </span><span class="s4">0</span><span class="s1"> 
+<a name="l744"><span class="ln">744  </span></a>        distance = float(distance) 
+<a name="l745"><span class="ln">745  </span></a> 
+<a name="l746"><span class="ln">746  </span></a>        </span><span class="s2">if </span><span class="s1">distance &lt;= float(</span><span class="s4">20</span><span class="s1">): 
+<a name="l747"><span class="ln">747  </span></a>            total_time = </span><span class="s4">60</span><span class="s1"> 
+<a name="l748"><span class="ln">748  </span></a>        </span><span class="s2">elif </span><span class="s1">distance &gt; float(</span><span class="s4">20</span><span class="s1">) </span><span class="s2">and </span><span class="s1">distance &lt;= float(</span><span class="s4">50</span><span class="s1">): 
+<a name="l749"><span class="ln">749  </span></a>            total_time = </span><span class="s4">90</span><span class="s1"> 
+<a name="l750"><span class="ln">750  </span></a>        </span><span class="s2">elif </span><span class="s1">distance &gt; float(</span><span class="s4">50</span><span class="s1">): 
+<a name="l751"><span class="ln">751  </span></a>            total_time = distance * float(</span><span class="s4">1.2</span><span class="s1">) 
+<a name="l752"><span class="ln">752  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l753"><span class="ln">753  </span></a>            total_time = None 
+<a name="l754"><span class="ln">754  </span></a> 
+<a name="l755"><span class="ln">755  </span></a>        </span><span class="s2">return </span><span class="s1">total_time 
+<a name="l756"><span class="ln">756  </span></a> 
+<a name="l757"><span class="ln">757  </span></a>    </span><span class="s0"># returns duration of trip in minutes</span><span class="s1"> 
+<a name="l758"><span class="ln">758  </span></a>    </span><span class="s0"># input: two addresses sets of str(lat, lng)</span><span class="s1"> 
+<a name="l759"><span class="ln">759  </span></a>    </span><span class="s0"># output: duration in minutes via driving</span><span class="s1"> 
+<a name="l760"><span class="ln">760  </span></a>    </span><span class="s2">def </span><span class="s1">get_duration(self): 
+<a name="l761"><span class="ln">761  </span></a>        origin = str(self.origin_latlng[</span><span class="s3">'lat'</span><span class="s1">]) + </span><span class="s3">', ' </span><span class="s1">+ str(self.origin_latlng[</span><span class="s3">'lng'</span><span class="s1">]) 
+<a name="l762"><span class="ln">762  </span></a>        destination = str(self.destination_latlng[</span><span class="s3">'lat'</span><span class="s1">]) + </span><span class="s3">', ' </span><span class="s1">+ str(self.destination_latlng[</span><span class="s3">'lng'</span><span class="s1">]) 
+<a name="l763"><span class="ln">763  </span></a> 
+<a name="l764"><span class="ln">764  </span></a>        url = </span><span class="s3">&quot;https://maps.googleapis.com/maps/api/distancematrix/json?origins=&quot; </span><span class="s1">+ \ 
+<a name="l765"><span class="ln">765  </span></a>              origin + </span><span class="s3">&quot;&amp;destinations=&quot; </span><span class="s1">+ destination + \ 
+<a name="l766"><span class="ln">766  </span></a>              </span><span class="s3">&quot;&amp;mode=driving&amp;language=en-EN&amp;sensor=false&amp;units=imperial&amp;key=&quot; </span><span class="s1">+ self.google_key 
+<a name="l767"><span class="ln">767  </span></a>        r = requests.get(url) 
+<a name="l768"><span class="ln">768  </span></a>        json = r.json() 
+<a name="l769"><span class="ln">769  </span></a> 
+<a name="l770"><span class="ln">770  </span></a>        duration = re.sub(</span><span class="s3">'[hoursmin]'</span><span class="s6">, </span><span class="s3">' '</span><span class="s6">, </span><span class="s1">json[</span><span class="s3">'rows'</span><span class="s1">][</span><span class="s4">0</span><span class="s1">][</span><span class="s3">'elements'</span><span class="s1">][</span><span class="s4">0</span><span class="s1">][</span><span class="s3">'duration'</span><span class="s1">][</span><span class="s3">'text'</span><span class="s1">]) 
+<a name="l771"><span class="ln">771  </span></a>        results = duration.split() 
+<a name="l772"><span class="ln">772  </span></a>        </span><span class="s2">return </span><span class="s1">results 
+<a name="l773"><span class="ln">773  </span></a> 
+<a name="l774"><span class="ln">774  </span></a>    </span><span class="s2">def </span><span class="s1">is_ground(self): 
+<a name="l775"><span class="ln">775  </span></a> 
+<a name="l776"><span class="ln">776  </span></a>        </span><span class="s0">#geocode origin and destination</span><span class="s1"> 
+<a name="l777"><span class="ln">777  </span></a>        self.set_latlng(</span><span class="s3">&quot;origin&quot;</span><span class="s1">) 
+<a name="l778"><span class="ln">778  </span></a>        self.set_latlng(</span><span class="s3">&quot;destination&quot;</span><span class="s1">) 
+<a name="l779"><span class="ln">779  </span></a> 
+<a name="l780"><span class="ln">780  </span></a>        self.distance = self.get_distance(self.origin_latlng</span><span class="s6">, </span><span class="s1">self.destination_latlng) 
+<a name="l781"><span class="ln">781  </span></a>        </span><span class="s2">if </span><span class="s3">'ft' </span><span class="s2">in </span><span class="s1">str(self.distance): 
+<a name="l782"><span class="ln">782  </span></a>            self.distance=</span><span class="s4">1 </span><span class="s0">#$ &lt;- i dont get this</span><span class="s1"> 
+<a name="l783"><span class="ln">783  </span></a> 
+<a name="l784"><span class="ln">784  </span></a>        </span><span class="s2">if </span><span class="s1">float(self.distance) &lt;= float(</span><span class="s4">200</span><span class="s1">): 
+<a name="l785"><span class="ln">785  </span></a>            </span><span class="s2">return </span><span class="s1">True 
+<a name="l786"><span class="ln">786  </span></a>        </span><span class="s2">elif </span><span class="s1">float(self.distance) &gt; float(</span><span class="s4">200</span><span class="s1">): 
+<a name="l787"><span class="ln">787  </span></a>            </span><span class="s2">return </span><span class="s1">False 
+<a name="l788"><span class="ln">788  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l789"><span class="ln">789  </span></a>            </span><span class="s2">return </span><span class="s1">None 
+<a name="l790"><span class="ln">790  </span></a> 
+<a name="l791"><span class="ln">791  </span></a>    </span><span class="s2">def </span><span class="s1">total_weight(self): 
+<a name="l792"><span class="ln">792  </span></a>        weight = </span><span class="s4">0</span><span class="s1"> 
+<a name="l793"><span class="ln">793  </span></a>        contents = self.get_contents() 
+<a name="l794"><span class="ln">794  </span></a>        </span><span class="s2">for </span><span class="s1">content </span><span class="s2">in </span><span class="s1">contents: 
+<a name="l795"><span class="ln">795  </span></a>            weight += int(content.weight) 
+<a name="l796"><span class="ln">796  </span></a>        </span><span class="s2">return </span><span class="s1">weight 
+<a name="l797"><span class="ln">797  </span></a> 
+<a name="l798"><span class="ln">798  </span></a>    </span><span class="s2">def </span><span class="s1">insurance_price(self): 
+<a name="l799"><span class="ln">799  </span></a>        ins_price = </span><span class="s4">0</span><span class="s1"> 
+<a name="l800"><span class="ln">800  </span></a>        contents = self.get_contents() 
+<a name="l801"><span class="ln">801  </span></a>        </span><span class="s2">for </span><span class="s1">content </span><span class="s2">in </span><span class="s1">contents: 
+<a name="l802"><span class="ln">802  </span></a>            ins_price += content.value 
+<a name="l803"><span class="ln">803  </span></a> 
+<a name="l804"><span class="ln">804  </span></a>        </span><span class="s0">#if declared value &gt; 50, add .05 for every dollar over</span><span class="s1"> 
+<a name="l805"><span class="ln">805  </span></a>        </span><span class="s2">if </span><span class="s1">ins_price &gt; </span><span class="s4">50</span><span class="s1">: 
+<a name="l806"><span class="ln">806  </span></a>            ins_price = (ins_price - </span><span class="s4">50</span><span class="s1">) * </span><span class="s4">.05</span><span class="s1"> 
+<a name="l807"><span class="ln">807  </span></a>        </span><span class="s2">return </span><span class="s1">ins_price 
+<a name="l808"><span class="ln">808  </span></a> 
+<a name="l809"><span class="ln">809  </span></a>    </span><span class="s2">def </span><span class="s1">update_timezone(self</span><span class="s6">, </span><span class="s1">segment): 
+<a name="l810"><span class="ln">810  </span></a>        </span><span class="s2">if </span><span class="s1">segment == </span><span class="s3">&quot;origin&quot;</span><span class="s1">: 
+<a name="l811"><span class="ln">811  </span></a>            origin = self.origin 
+<a name="l812"><span class="ln">812  </span></a>            segment = origin 
+<a name="l813"><span class="ln">813  </span></a>            address = str(origin.city) + </span><span class="s3">' ' </span><span class="s1">+ str(origin.us_state) + </span><span class="s3">' ' </span><span class="s1">+ str(origin.address_1) 
+<a name="l814"><span class="ln">814  </span></a> 
+<a name="l815"><span class="ln">815  </span></a>        </span><span class="s2">elif </span><span class="s1">segment == </span><span class="s3">&quot;destination&quot;</span><span class="s1">: 
+<a name="l816"><span class="ln">816  </span></a>            destination = self.destination 
+<a name="l817"><span class="ln">817  </span></a>            segment = destination 
+<a name="l818"><span class="ln">818  </span></a>            address = str(destination.city) + </span><span class="s3">' ' </span><span class="s1">+ str(destination.us_state) + </span><span class="s3">' ' </span><span class="s1">+ str(destination.address_1) 
+<a name="l819"><span class="ln">819  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l820"><span class="ln">820  </span></a>            </span><span class="s2">return </span><span class="s1">False 
+<a name="l821"><span class="ln">821  </span></a> 
+<a name="l822"><span class="ln">822  </span></a>        lat</span><span class="s6">, </span><span class="s1">lng = geocode(address) 
+<a name="l823"><span class="ln">823  </span></a>        url = </span><span class="s3">'https://maps.googleapis.com/maps/api/timezone/json?location=' </span><span class="s1">+ \ 
+<a name="l824"><span class="ln">824  </span></a>              str(lat) + </span><span class="s3">',' </span><span class="s1">+ str(lng) + </span><span class="s3">'&amp;timestamp=1331161200&amp;sensor=true_or_false&amp;key=' </span><span class="s1">+ self.google_key 
+<a name="l825"><span class="ln">825  </span></a>        r_timezone = requests.get(url) 
+<a name="l826"><span class="ln">826  </span></a>        json_timezone = r_timezone.json() 
+<a name="l827"><span class="ln">827  </span></a>        timezone = json_timezone[</span><span class="s3">'timeZoneName'</span><span class="s1">] 
+<a name="l828"><span class="ln">828  </span></a>        segment.update_record(timezone=timezone) 
+<a name="l829"><span class="ln">829  </span></a>        </span><span class="s2">return </span><span class="s1">True 
+<a name="l830"><span class="ln">830  </span></a> 
+<a name="l831"><span class="ln">831  </span></a>    </span><span class="s2">def </span><span class="s1">ground_quote(self</span><span class="s6">, </span><span class="s1">origin_agent</span><span class="s6">, </span><span class="s1">distance=None): 
+<a name="l832"><span class="ln">832  </span></a>        </span><span class="s2">if </span><span class="s1">distance </span><span class="s2">is </span><span class="s1">None: 
+<a name="l833"><span class="ln">833  </span></a>            distance = float(self.distance) 
+<a name="l834"><span class="ln">834  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l835"><span class="ln">835  </span></a>            distance = float(distance) 
+<a name="l836"><span class="ln">836  </span></a>        price = float(</span><span class="s4">0</span><span class="s1">) 
+<a name="l837"><span class="ln">837  </span></a>        </span><span class="s2">if </span><span class="s1">origin_agent </span><span class="s2">is not </span><span class="s1">None: 
+<a name="l838"><span class="ln">838  </span></a>            </span><span class="s2">if </span><span class="s1">distance &lt;= origin_agent.fleetInfoTransportationRates.milesInBaseRate: 
+<a name="l839"><span class="ln">839  </span></a>                price += origin_agent.fleetInfoTransportationRates.minBaseRate 
+<a name="l840"><span class="ln">840  </span></a>            </span><span class="s2">elif </span><span class="s1">distance &gt; origin_agent.fleetInfoTransportationRates.milesInBaseRate: 
+<a name="l841"><span class="ln">841  </span></a>                price = origin_agent.fleetInfoTransportationRates.minBaseRate + (origin_agent.fleetInfoTransportationRates.perMileRate * (distance-origin_agent.fleetInfoTransportationRates.milesInBaseRate)) 
+<a name="l842"><span class="ln">842  </span></a>            rounded_price = (</span><span class="s3">&quot;%.2f&quot; </span><span class="s1">% round(price</span><span class="s6">,</span><span class="s4">2</span><span class="s1">)) 
+<a name="l843"><span class="ln">843  </span></a>            </span><span class="s2">return </span><span class="s1">rounded_price 
+<a name="l844"><span class="ln">844  </span></a>        </span><span class="s2">elif </span><span class="s1">origin_agent </span><span class="s2">is </span><span class="s1">None: 
+<a name="l845"><span class="ln">845  </span></a>            </span><span class="s2">if </span><span class="s1">distance &lt;= float(</span><span class="s4">20.00</span><span class="s1">): 
+<a name="l846"><span class="ln">846  </span></a>                price = </span><span class="s4">30.00</span><span class="s1"> 
+<a name="l847"><span class="ln">847  </span></a>                </span><span class="s2">return </span><span class="s1">price 
+<a name="l848"><span class="ln">848  </span></a>            </span><span class="s2">else</span><span class="s1">: 
+<a name="l849"><span class="ln">849  </span></a>                price = </span><span class="s4">30.00 </span><span class="s1">+ (distance * float(</span><span class="s4">1.50</span><span class="s1">)) 
+<a name="l850"><span class="ln">850  </span></a>                </span><span class="s2">return </span><span class="s1">price 
+<a name="l851"><span class="ln">851  </span></a> 
+<a name="l852"><span class="ln">852  </span></a>    </span><span class="s2">def </span><span class="s1">set_amount(self</span><span class="s6">, </span><span class="s1">amount): 
+<a name="l853"><span class="ln">853  </span></a>        self.order.update_record(amount=amount) 
+<a name="l854"><span class="ln">854  </span></a>        </span><span class="s2">return </span><span class="s1">True 
+<a name="l855"><span class="ln">855  </span></a> 
+<a name="l856"><span class="ln">856  </span></a>    </span><span class="s2">def </span><span class="s1">set_ground(self): 
+<a name="l857"><span class="ln">857  </span></a>        price = self.calculate_price(</span><span class="s3">&quot;ground&quot;</span><span class="s1">) 
+<a name="l858"><span class="ln">858  </span></a>        self.set_amount(price) 
+<a name="l859"><span class="ln">859  </span></a>        self.set_dropoff_time() 
+<a name="l860"><span class="ln">860  </span></a>        </span><span class="s2">return </span><span class="s1">True 
+<a name="l861"><span class="ln">861  </span></a> 
+<a name="l862"><span class="ln">862  </span></a>    </span><span class="s2">def </span><span class="s1">calculate_price(self</span><span class="s6">, </span><span class="s1">mode</span><span class="s6">, </span><span class="s1">distanceA=None</span><span class="s6">, </span><span class="s1">distanceB=None): 
+<a name="l863"><span class="ln">863  </span></a>        ins_price = self.insurance_price() 
+<a name="l864"><span class="ln">864  </span></a> 
+<a name="l865"><span class="ln">865  </span></a>        </span><span class="s2">if </span><span class="s1">mode == </span><span class="s3">&quot;ground&quot;</span><span class="s1">: 
+<a name="l866"><span class="ln">866  </span></a>            ground_price = self.ground_quote() 
+<a name="l867"><span class="ln">867  </span></a>            price = ins_price + ground_price 
+<a name="l868"><span class="ln">868  </span></a>            </span><span class="s2">return </span><span class="s1">price 
+<a name="l869"><span class="ln">869  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l870"><span class="ln">870  </span></a>            p1 = self.ground_quote(distanceA) 
+<a name="l871"><span class="ln">871  </span></a>            p2 = self.ground_quote(distanceB) 
+<a name="l872"><span class="ln">872  </span></a>            air = self.airline_quote() 
+<a name="l873"><span class="ln">873  </span></a>            price = p1 + p2 + air + ins_price 
+<a name="l874"><span class="ln">874  </span></a>            </span><span class="s2">return </span><span class="s1">price 
+<a name="l875"><span class="ln">875  </span></a> 
+<a name="l876"><span class="ln">876  </span></a>    </span><span class="s2">def </span><span class="s1">get_amount(self): 
+<a name="l877"><span class="ln">877  </span></a>        </span><span class="s2">try</span><span class="s1">: 
+<a name="l878"><span class="ln">878  </span></a>            price = self.order.amount 
+<a name="l879"><span class="ln">879  </span></a>        </span><span class="s2">except</span><span class="s1">: 
+<a name="l880"><span class="ln">880  </span></a>            price = self.price 
+<a name="l881"><span class="ln">881  </span></a>        </span><span class="s2">return </span><span class="s1">price 
+<a name="l882"><span class="ln">882  </span></a> 
+<a name="l883"><span class="ln">883  </span></a>    </span><span class="s0"># sets lat, lng points for origin and destination</span><span class="s1"> 
+<a name="l884"><span class="ln">884  </span></a>    </span><span class="s0"># if destination, also set distance between origin, dest</span><span class="s1"> 
+<a name="l885"><span class="ln">885  </span></a>    </span><span class="s2">def </span><span class="s1">set_latlng(self</span><span class="s6">, </span><span class="s1">segment): 
+<a name="l886"><span class="ln">886  </span></a> 
+<a name="l887"><span class="ln">887  </span></a>        </span><span class="s2">if </span><span class="s1">self.quote: 
+<a name="l888"><span class="ln">888  </span></a>            origin = self.origin 
+<a name="l889"><span class="ln">889  </span></a>            destination = self.destination 
+<a name="l890"><span class="ln">890  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l891"><span class="ln">891  </span></a>            origin = self.origin.zip_code 
+<a name="l892"><span class="ln">892  </span></a>            </span><span class="s2">if </span><span class="s1">current.mc.get(self.dest_cache): 
+<a name="l893"><span class="ln">893  </span></a>                destination = current.mc.get(self.dest_cache) 
+<a name="l894"><span class="ln">894  </span></a>                destination = destination.zip_code 
+<a name="l895"><span class="ln">895  </span></a>            </span><span class="s2">else</span><span class="s1">: 
+<a name="l896"><span class="ln">896  </span></a>                destination = self.destination.zip_code 
+<a name="l897"><span class="ln">897  </span></a> 
+<a name="l898"><span class="ln">898  </span></a>        </span><span class="s2">try</span><span class="s1">: 
+<a name="l899"><span class="ln">899  </span></a>            </span><span class="s2">if </span><span class="s1">segment == </span><span class="s3">'origin'</span><span class="s1">: 
+<a name="l900"><span class="ln">900  </span></a>                self.origin_latlng = self.geocode(origin) 
+<a name="l901"><span class="ln">901  </span></a>                </span><span class="s2">return </span><span class="s1">True 
+<a name="l902"><span class="ln">902  </span></a>            </span><span class="s2">elif </span><span class="s1">segment == </span><span class="s3">'destination'</span><span class="s1">: 
+<a name="l903"><span class="ln">903  </span></a>                self.destination_latlng = self.geocode(destination) 
+<a name="l904"><span class="ln">904  </span></a>                </span><span class="s2">return </span><span class="s1">True 
+<a name="l905"><span class="ln">905  </span></a>            </span><span class="s2">else</span><span class="s1">: 
+<a name="l906"><span class="ln">906  </span></a>                </span><span class="s2">return </span><span class="s1">False 
+<a name="l907"><span class="ln">907  </span></a>        </span><span class="s2">except</span><span class="s1">: 
+<a name="l908"><span class="ln">908  </span></a>            </span><span class="s2">return </span><span class="s1">False 
+<a name="l909"><span class="ln">909  </span></a> 
+<a name="l910"><span class="ln">910  </span></a>    </span><span class="s2">def </span><span class="s1">is_current(self): 
+<a name="l911"><span class="ln">911  </span></a>        arrival_date = self.flight_matrix[</span><span class="s3">'arrival_times'</span><span class="s1">][</span><span class="s4">0</span><span class="s1">].split(</span><span class="s3">'T'</span><span class="s1">)[</span><span class="s4">0</span><span class="s1">] 
+<a name="l912"><span class="ln">912  </span></a>        arrival_date = datetime.datetime.strptime(arrival_date</span><span class="s6">, </span><span class="s3">&quot;%Y-%m-%d&quot;</span><span class="s1">) 
+<a name="l913"><span class="ln">913  </span></a> 
+<a name="l914"><span class="ln">914  </span></a>        </span><span class="s2">if not </span><span class="s1">self.quote: 
+<a name="l915"><span class="ln">915  </span></a>            pickup_datetime = self.order.pickup_time 
+<a name="l916"><span class="ln">916  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l917"><span class="ln">917  </span></a>            pickup_datetime = self.pickup_datetime 
+<a name="l918"><span class="ln">918  </span></a> 
+<a name="l919"><span class="ln">919  </span></a>        </span><span class="s0">#if arrival date of flight &gt;= order pickup date</span><span class="s1"> 
+<a name="l920"><span class="ln">920  </span></a>        </span><span class="s2">if </span><span class="s1">arrival_date.date() &gt;= pickup_datetime.date(): 
+<a name="l921"><span class="ln">921  </span></a>            </span><span class="s2">return </span><span class="s1">True 
+<a name="l922"><span class="ln">922  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l923"><span class="ln">923  </span></a>            </span><span class="s2">return </span><span class="s1">False 
+<a name="l924"><span class="ln">924  </span></a> 
+<a name="l925"><span class="ln">925  </span></a>    </span><span class="s2">def </span><span class="s1">get_flight_matrix(self): 
+<a name="l926"><span class="ln">926  </span></a>        </span><span class="s2">try</span><span class="s1">: 
+<a name="l927"><span class="ln">927  </span></a>            flight_matrix = cPickle.loads(self.order.all_flights) 
+<a name="l928"><span class="ln">928  </span></a>            self.flight_matrix = flight_matrix 
+<a name="l929"><span class="ln">929  </span></a>            </span><span class="s2">if </span><span class="s1">self.is_current(): 
+<a name="l930"><span class="ln">930  </span></a>                </span><span class="s2">return </span><span class="s1">flight_matrix 
+<a name="l931"><span class="ln">931  </span></a>            </span><span class="s2">else</span><span class="s1">: 
+<a name="l932"><span class="ln">932  </span></a>                </span><span class="s2">return </span><span class="s1">None 
+<a name="l933"><span class="ln">933  </span></a>        </span><span class="s2">except</span><span class="s1">: 
+<a name="l934"><span class="ln">934  </span></a>            </span><span class="s2">return </span><span class="s1">None 
+<a name="l935"><span class="ln">935  </span></a> 
+<a name="l936"><span class="ln">936  </span></a>    </span><span class="s0"># returns address based on (lat, lng)</span><span class="s1"> 
+<a name="l937"><span class="ln">937  </span></a>    </span><span class="s2">def </span><span class="s1">reverse_geocode(self</span><span class="s6">, </span><span class="s1">latlng): 
+<a name="l938"><span class="ln">938  </span></a>        lat = latlng[</span><span class="s3">'lat'</span><span class="s1">] 
+<a name="l939"><span class="ln">939  </span></a>        lng = latlng[</span><span class="s3">'lng'</span><span class="s1">] 
+<a name="l940"><span class="ln">940  </span></a> 
+<a name="l941"><span class="ln">941  </span></a>        url = </span><span class="s3">'https://maps.googleapis.com/maps/api/geocode/json?latlng=' </span><span class="s1">+ str(lat) + </span><span class="s3">',' </span><span class="s1">+ str( 
+<a name="l942"><span class="ln">942  </span></a>            lng) + </span><span class="s3">'&amp;sensor=true_or_false&amp;key=AIzaSyC5tj3ulnc4nZCQR1ui1ZAqpdaxpCU9wYA'</span><span class="s1"> 
+<a name="l943"><span class="ln">943  </span></a>        r = requests.get(url) 
+<a name="l944"><span class="ln">944  </span></a>        json = r.json() 
+<a name="l945"><span class="ln">945  </span></a>        addr = json[</span><span class="s3">'results'</span><span class="s1">][</span><span class="s4">1</span><span class="s1">][</span><span class="s3">'address_components'</span><span class="s1">][</span><span class="s4">1</span><span class="s1">][</span><span class="s3">'short_name'</span><span class="s1">] + </span><span class="s3">', ' </span><span class="s1">+ \ 
+<a name="l946"><span class="ln">946  </span></a>               json[</span><span class="s3">'results'</span><span class="s1">][</span><span class="s4">1</span><span class="s1">][</span><span class="s3">'address_components'</span><span class="s1">][</span><span class="s4">3</span><span class="s1">][</span><span class="s3">'short_name'</span><span class="s1">] + </span><span class="s3">' ' </span><span class="s1">+ \ 
+<a name="l947"><span class="ln">947  </span></a>               json[</span><span class="s3">'results'</span><span class="s1">][</span><span class="s4">1</span><span class="s1">][</span><span class="s3">'address_components'</span><span class="s1">][</span><span class="s4">0</span><span class="s1">][</span><span class="s3">'short_name'</span><span class="s1">] 
+<a name="l948"><span class="ln">948  </span></a>        </span><span class="s2">return </span><span class="s1">addr 
+<a name="l949"><span class="ln">949  </span></a> 
+<a name="l950"><span class="ln">950  </span></a> 
+<a name="l951"><span class="ln">951  </span></a></span><span class="s2">class </span><span class="s1">Flight(Order): 
+<a name="l952"><span class="ln">952  </span></a>    </span><span class="s2">def </span><span class="s1">__init__(self</span><span class="s6">, </span><span class="s1">quote=False</span><span class="s6">, </span><span class="s1">order_id=False): 
+<a name="l953"><span class="ln">953  </span></a>        </span><span class="s0">#if quote:</span><span class="s1"> 
+<a name="l954"><span class="ln">954  </span></a>            </span><span class="s0">#Order.__init__(self,quote=True)</span><span class="s1"> 
+<a name="l955"><span class="ln">955  </span></a>        </span><span class="s0">#else:</span><span class="s1"> 
+<a name="l956"><span class="ln">956  </span></a>        Order.__init__(self) 
+<a name="l957"><span class="ln">957  </span></a>        self.quote = quote 
+<a name="l958"><span class="ln">958  </span></a>        </span><span class="s0">#self.order_id = order_id</span><span class="s1"> 
+<a name="l959"><span class="ln">959  </span></a>        </span><span class="s0">#avoids db, for users w/o an account</span><span class="s1"> 
+<a name="l960"><span class="ln">960  </span></a>        </span><span class="s2">if </span><span class="s1">self.quote: 
+<a name="l961"><span class="ln">961  </span></a>            self.delivery_datetime = None 
+<a name="l962"><span class="ln">962  </span></a>            self.duration = None 
+<a name="l963"><span class="ln">963  </span></a>            self.price = None 
+<a name="l964"><span class="ln">964  </span></a>            self.pickup_datetime = None 
+<a name="l965"><span class="ln">965  </span></a>            self.flight = None 
+<a name="l966"><span class="ln">966  </span></a> 
+<a name="l967"><span class="ln">967  </span></a>            </span><span class="s0">#get variables, either from session or request.args</span><span class="s1"> 
+<a name="l968"><span class="ln">968  </span></a>            </span><span class="s2">try</span><span class="s1">: 
+<a name="l969"><span class="ln">969  </span></a>                self.origin = current.request.args[</span><span class="s4">0</span><span class="s1">] 
+<a name="l970"><span class="ln">970  </span></a>                self.destination = current.request.args[</span><span class="s4">1</span><span class="s1">] 
+<a name="l971"><span class="ln">971  </span></a>                self.weight = current.request.args[</span><span class="s4">2</span><span class="s1">] 
+<a name="l972"><span class="ln">972  </span></a>                self.ready_datetime = current.request.now 
+<a name="l973"><span class="ln">973  </span></a> 
+<a name="l974"><span class="ln">974  </span></a>            </span><span class="s2">except</span><span class="s1">: 
+<a name="l975"><span class="ln">975  </span></a>                self.origin = current.session.origin 
+<a name="l976"><span class="ln">976  </span></a>                self.destination = current.session.destination 
+<a name="l977"><span class="ln">977  </span></a>                self.weight = current.session.weight 
+<a name="l978"><span class="ln">978  </span></a>                ready_date = current.session.pickup_date 
+<a name="l979"><span class="ln">979  </span></a>                ready_time = datetime.datetime.strptime(str(current.session.pickup_time)</span><span class="s6">, </span><span class="s3">'%H:%M:%S'</span><span class="s1">).time() 
+<a name="l980"><span class="ln">980  </span></a>                self.ready_datetime = datetime.datetime.combine(ready_date</span><span class="s6">, </span><span class="s1">ready_time) 
+<a name="l981"><span class="ln">981  </span></a>        </span><span class="s0">#self.order = current.db(current.db.orders.order_id==self.order_id).select().last()</span><span class="s1"> 
+<a name="l982"><span class="ln">982  </span></a>        self.segment_delivery = None 
+<a name="l983"><span class="ln">983  </span></a>        self.sensitivity = </span><span class="s4">3</span><span class="s1"> 
+<a name="l984"><span class="ln">984  </span></a>        self.flight_matrix = { 
+<a name="l985"><span class="ln">985  </span></a>            </span><span class="s3">&quot;arrival_times&quot;</span><span class="s1">: []</span><span class="s6">,</span><span class="s1"> 
+<a name="l986"><span class="ln">986  </span></a>            </span><span class="s3">&quot;flights&quot;</span><span class="s1">: []</span><span class="s6">,</span><span class="s1"> 
+<a name="l987"><span class="ln">987  </span></a>            </span><span class="s3">&quot;total_times&quot;</span><span class="s1">: []</span><span class="s6">,</span><span class="s1"> 
+<a name="l988"><span class="ln">988  </span></a>            </span><span class="s3">&quot;total_prices&quot;</span><span class="s1">: []</span><span class="s6">,</span><span class="s1"> 
+<a name="l989"><span class="ln">989  </span></a>            </span><span class="s3">&quot;leg1&quot;</span><span class="s1">: []</span><span class="s6">,</span><span class="s1"> 
+<a name="l990"><span class="ln">990  </span></a>            </span><span class="s3">&quot;leg2&quot;</span><span class="s1">: [] 
+<a name="l991"><span class="ln">991  </span></a>        } 
+<a name="l992"><span class="ln">992  </span></a> 
+<a name="l993"><span class="ln">993  </span></a>    </span><span class="s2">def </span><span class="s1">set_flight_matrix(self): 
+<a name="l994"><span class="ln">994  </span></a>        </span><span class="s2">if </span><span class="s1">current.auth.is_logged_in(): 
+<a name="l995"><span class="ln">995  </span></a>            self.order.update_record(all_flights=</span><span class="s3">''</span><span class="s1">)  </span><span class="s0">#seems to complain when you don't do this</span><span class="s1"> 
+<a name="l996"><span class="ln">996  </span></a>            self.order.update_record(all_flights=cPickle.dumps(self.flight_matrix</span><span class="s6">, </span><span class="s1">cPickle.HIGHEST_PROTOCOL)) 
+<a name="l997"><span class="ln">997  </span></a>            </span><span class="s2">return </span><span class="s1">True 
+<a name="l998"><span class="ln">998  </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l999"><span class="ln">999  </span></a>            </span><span class="s2">return </span><span class="s1">False 
+<a name="l1000"><span class="ln">1000 </span></a> 
+<a name="l1001"><span class="ln">1001 </span></a>    </span><span class="s2">def </span><span class="s1">get_flight_matrix(self): 
+<a name="l1002"><span class="ln">1002 </span></a>        </span><span class="s2">try</span><span class="s1">: 
+<a name="l1003"><span class="ln">1003 </span></a>            flight_matrix = cPickle.loads(self.order.all_flights) </span><span class="s0">#&lt;-- not unique must look into later. Also should i grab this from orders table &quot;all_flights&quot;?</span><span class="s1"> 
+<a name="l1004"><span class="ln">1004 </span></a>            self.flight_matrix = flight_matrix 
+<a name="l1005"><span class="ln">1005 </span></a>            </span><span class="s2">if </span><span class="s1">self.is_current(): 
+<a name="l1006"><span class="ln">1006 </span></a>                </span><span class="s2">return </span><span class="s1">flight_matrix 
+<a name="l1007"><span class="ln">1007 </span></a>            </span><span class="s2">else</span><span class="s1">: 
+<a name="l1008"><span class="ln">1008 </span></a>                </span><span class="s2">return </span><span class="s1">None 
+<a name="l1009"><span class="ln">1009 </span></a>        </span><span class="s2">except</span><span class="s1">: 
+<a name="l1010"><span class="ln">1010 </span></a>            </span><span class="s2">return </span><span class="s1">None 
+<a name="l1011"><span class="ln">1011 </span></a> 
+<a name="l1012"><span class="ln">1012 </span></a>    </span><span class="s2">def </span><span class="s1">get_airline_hours(self): 
+<a name="l1013"><span class="ln">1013 </span></a>        airline_hours = current.db(current.db.airlines).select() 
+<a name="l1014"><span class="ln">1014 </span></a>        </span><span class="s2">return </span><span class="s1">airline_hours 
+<a name="l1015"><span class="ln">1015 </span></a> 
+<a name="l1016"><span class="ln">1016 </span></a>    </span><span class="s2">def </span><span class="s1">generate_flights(self): 
+<a name="l1017"><span class="ln">1017 </span></a>        arrival_times = [] 
+<a name="l1018"><span class="ln">1018 </span></a>        total_prices = [] 
+<a name="l1019"><span class="ln">1019 </span></a>        total_times = [] 
+<a name="l1020"><span class="ln">1020 </span></a>        leg1 = [] 
+<a name="l1021"><span class="ln">1021 </span></a>        leg2 = [] 
+<a name="l1022"><span class="ln">1022 </span></a>        flights = [] 
+<a name="l1023"><span class="ln">1023 </span></a> 
+<a name="l1024"><span class="ln">1024 </span></a>        </span><span class="s0">#get list of airports within radius of O,D</span><span class="s1"> 
+<a name="l1025"><span class="ln">1025 </span></a>        Origin_AP = self.choose_airport(</span><span class="s3">&quot;origin&quot;</span><span class="s1">) 
+<a name="l1026"><span class="ln">1026 </span></a>        Dest_AP = self.choose_airport(</span><span class="s3">&quot;destination&quot;</span><span class="s1">) 
+<a name="l1027"><span class="ln">1027 </span></a> 
+<a name="l1028"><span class="ln">1028 </span></a>        </span><span class="s2">if </span><span class="s1">self.quote: 
+<a name="l1029"><span class="ln">1029 </span></a>            time = self.pickup_datetime.time() 
+<a name="l1030"><span class="ln">1030 </span></a>            date = self.pickup_datetime.date() 
+<a name="l1031"><span class="ln">1031 </span></a> 
+<a name="l1032"><span class="ln">1032 </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l1033"><span class="ln">1033 </span></a>            time = self.origin.shipment_ready_time 
+<a name="l1034"><span class="ln">1034 </span></a>            date = self.origin.shipment_ready_date 
+<a name="l1035"><span class="ln">1035 </span></a> 
+<a name="l1036"><span class="ln">1036 </span></a>        </span><span class="s0">#airline_hours = self.get_airline_hours()</span><span class="s1"> 
+<a name="l1037"><span class="ln">1037 </span></a> 
+<a name="l1038"><span class="ln">1038 </span></a>        </span><span class="s2">for </span><span class="s1">origin_AP </span><span class="s2">in </span><span class="s1">Origin_AP[</span><span class="s3">'airport'</span><span class="s1">]: 
+<a name="l1039"><span class="ln">1039 </span></a>            </span><span class="s2">for </span><span class="s1">dest_AP </span><span class="s2">in </span><span class="s1">Dest_AP[</span><span class="s3">'airport'</span><span class="s1">]: 
+<a name="l1040"><span class="ln">1040 </span></a> 
+<a name="l1041"><span class="ln">1041 </span></a>                </span><span class="s0">#distance from origin =&gt; AP_A, AP_B =&gt; destination</span><span class="s1"> 
+<a name="l1042"><span class="ln">1042 </span></a>                airport_latlng = {</span><span class="s3">'lat'</span><span class="s1">: origin_AP[</span><span class="s3">'latitude'</span><span class="s1">]</span><span class="s6">, </span><span class="s3">'lng'</span><span class="s1">: origin_AP[</span><span class="s3">'longitude'</span><span class="s1">]} 
+<a name="l1043"><span class="ln">1043 </span></a>                distanceA = self.get_distance(self.origin_latlng</span><span class="s6">, </span><span class="s1">airport_latlng) 
+<a name="l1044"><span class="ln">1044 </span></a> 
+<a name="l1045"><span class="ln">1045 </span></a>                airport_latlng = {</span><span class="s3">'lat'</span><span class="s1">: dest_AP[</span><span class="s3">'latitude'</span><span class="s1">]</span><span class="s6">, </span><span class="s3">'lng'</span><span class="s1">: dest_AP[</span><span class="s3">'longitude'</span><span class="s1">]} 
+<a name="l1046"><span class="ln">1046 </span></a>                distanceB = self.get_distance(self.destination_latlng</span><span class="s6">, </span><span class="s1">airport_latlng) 
+<a name="l1047"><span class="ln">1047 </span></a> 
+<a name="l1048"><span class="ln">1048 </span></a> 
+<a name="l1049"><span class="ln">1049 </span></a>                </span><span class="s0">#idk what this is...</span><span class="s1"> 
+<a name="l1050"><span class="ln">1050 </span></a>                </span><span class="s0">#if duration is 1hr or greater, the list is length 2</span><span class="s1"> 
+<a name="l1051"><span class="ln">1051 </span></a>                </span><span class="s0">#duration_delta = None</span><span class="s1"> 
+<a name="l1052"><span class="ln">1052 </span></a>                </span><span class="s0">#if len(seg_duration) &gt; 1:</span><span class="s1"> 
+<a name="l1053"><span class="ln">1053 </span></a>                </span><span class="s0">#    duration_delta = datetime.timedelta(hours=int(seg_duration[1]), minutes=int(seg_duration[0]))</span><span class="s1"> 
+<a name="l1054"><span class="ln">1054 </span></a>                </span><span class="s0">#else just minutes</span><span class="s1"> 
+<a name="l1055"><span class="ln">1055 </span></a>                </span><span class="s0">#elif len(seg_duration) == 1:</span><span class="s1"> 
+<a name="l1056"><span class="ln">1056 </span></a>                </span><span class="s0">#    duration_delta = datetime.timedelta(minutes=int(seg_duration[0]))</span><span class="s1"> 
+<a name="l1057"><span class="ln">1057 </span></a> 
+<a name="l1058"><span class="ln">1058 </span></a>                </span><span class="s0">#add pu time + time to drive to AP + 90 min to process package &amp; paperwork</span><span class="s1"> 
+<a name="l1059"><span class="ln">1059 </span></a>                ceil = datetime.datetime.combine(date</span><span class="s6">, </span><span class="s1">time) + datetime.timedelta( 
+<a name="l1060"><span class="ln">1060 </span></a>                    minutes=self.compute_time(distanceA)) + datetime.timedelta(minutes=</span><span class="s4">90</span><span class="s1">) 
+<a name="l1061"><span class="ln">1061 </span></a> 
+<a name="l1062"><span class="ln">1062 </span></a>                </span><span class="s0">#get flight schedules, flight cannot leave before departure ceiling</span><span class="s1"> 
+<a name="l1063"><span class="ln">1063 </span></a>                new_flights = self.get_flights(origin_AP[</span><span class="s3">'fs'</span><span class="s1">]</span><span class="s6">, </span><span class="s1">dest_AP[</span><span class="s3">'fs'</span><span class="s1">]</span><span class="s6">, </span><span class="s1">ceil) 
+<a name="l1064"><span class="ln">1064 </span></a> 
+<a name="l1065"><span class="ln">1065 </span></a> 
+<a name="l1066"><span class="ln">1066 </span></a>                </span><span class="s0">#get total  time</span><span class="s1"> 
+<a name="l1067"><span class="ln">1067 </span></a>                total_time = self.compute_time(distanceA) + self.compute_time(distanceB) + float(</span><span class="s4">90</span><span class="s1">) 
+<a name="l1068"><span class="ln">1068 </span></a> 
+<a name="l1069"><span class="ln">1069 </span></a>                </span><span class="s0">#calculate price by air</span><span class="s1"> 
+<a name="l1070"><span class="ln">1070 </span></a>                price = self.calculate_price(</span><span class="s3">&quot;air&quot;</span><span class="s6">, </span><span class="s1">distanceA</span><span class="s6">, </span><span class="s1">distanceB) 
+<a name="l1071"><span class="ln">1071 </span></a> 
+<a name="l1072"><span class="ln">1072 </span></a>                </span><span class="s2">for </span><span class="s1">my_flight </span><span class="s2">in </span><span class="s1">new_flights: 
+<a name="l1073"><span class="ln">1073 </span></a>                    airtime = datetime.datetime.strptime(my_flight[</span><span class="s3">'arrivalTime'</span><span class="s1">]</span><span class="s6">, </span><span class="s3">'%Y-%m-%dT%H:%M:%S.%f'</span><span class="s1">) - \ 
+<a name="l1074"><span class="ln">1074 </span></a>                              datetime.datetime.strptime(my_flight[</span><span class="s3">'departureTime'</span><span class="s1">]</span><span class="s6">, </span><span class="s3">'%Y-%m-%dT%H:%M:%S.%f'</span><span class="s1">) 
+<a name="l1075"><span class="ln">1075 </span></a> 
+<a name="l1076"><span class="ln">1076 </span></a>                    airtime_minutes = airtime.seconds / </span><span class="s4">60</span><span class="s1"> 
+<a name="l1077"><span class="ln">1077 </span></a> 
+<a name="l1078"><span class="ln">1078 </span></a>                    arrival_times.append(my_flight[</span><span class="s3">'arrivalTime'</span><span class="s1">]) 
+<a name="l1079"><span class="ln">1079 </span></a>                    total_prices.append(int(price)) 
+<a name="l1080"><span class="ln">1080 </span></a>                    total_times.append(datetime.timedelta(minutes=total_time + airtime_minutes))  </span><span class="s0">#convert from minutes</span><span class="s1"> 
+<a name="l1081"><span class="ln">1081 </span></a>                    leg1.append(distanceA) 
+<a name="l1082"><span class="ln">1082 </span></a>                    leg2.append(distanceB) 
+<a name="l1083"><span class="ln">1083 </span></a> 
+<a name="l1084"><span class="ln">1084 </span></a>                flights += new_flights 
+<a name="l1085"><span class="ln">1085 </span></a> 
+<a name="l1086"><span class="ln">1086 </span></a>        self.flight_matrix[</span><span class="s3">&quot;arrival_times&quot;</span><span class="s1">] = arrival_times 
+<a name="l1087"><span class="ln">1087 </span></a>        self.flight_matrix[</span><span class="s3">&quot;flights&quot;</span><span class="s1">] = flights 
+<a name="l1088"><span class="ln">1088 </span></a>        self.flight_matrix[</span><span class="s3">&quot;total_prices&quot;</span><span class="s1">] = total_prices 
+<a name="l1089"><span class="ln">1089 </span></a>        self.flight_matrix[</span><span class="s3">&quot;total_times&quot;</span><span class="s1">] = total_times 
+<a name="l1090"><span class="ln">1090 </span></a>        self.flight_matrix[</span><span class="s3">&quot;leg1&quot;</span><span class="s1">] = leg1 
+<a name="l1091"><span class="ln">1091 </span></a>        self.flight_matrix[</span><span class="s3">&quot;leg2&quot;</span><span class="s1">] = leg2 
+<a name="l1092"><span class="ln">1092 </span></a> 
+<a name="l1093"><span class="ln">1093 </span></a>        </span><span class="s0">#selialize dict and save to db if not quote</span><span class="s1"> 
+<a name="l1094"><span class="ln">1094 </span></a>        </span><span class="s2">if not </span><span class="s1">self.quote: 
+<a name="l1095"><span class="ln">1095 </span></a>            self.set_flight_matrix() 
+<a name="l1096"><span class="ln">1096 </span></a>        </span><span class="s2">return </span><span class="s1">True 
+<a name="l1097"><span class="ln">1097 </span></a> 
+<a name="l1098"><span class="ln">1098 </span></a>    </span><span class="s2">def </span><span class="s1">set_flight_info(self</span><span class="s6">, </span><span class="s1">flights): 
+<a name="l1099"><span class="ln">1099 </span></a>        </span><span class="s2">try</span><span class="s1">: 
+<a name="l1100"><span class="ln">1100 </span></a>            current.db.flight_info.insert( 
+<a name="l1101"><span class="ln">1101 </span></a>                order_id=self.order.id</span><span class="s6">,</span><span class="s1"> 
+<a name="l1102"><span class="ln">1102 </span></a>                airline=flights[</span><span class="s3">'carrierFsCode'</span><span class="s1">]</span><span class="s6">,</span><span class="s1"> 
+<a name="l1103"><span class="ln">1103 </span></a>                flight_number=flights[</span><span class="s3">'flightNumber'</span><span class="s1">]</span><span class="s6">,</span><span class="s1"> 
+<a name="l1104"><span class="ln">1104 </span></a>                departure_AP=flights[</span><span class="s3">'departureAirportFsCode'</span><span class="s1">]</span><span class="s6">,</span><span class="s1"> 
+<a name="l1105"><span class="ln">1105 </span></a>                arrival_AP=flights[</span><span class="s3">'arrivalAirportFsCode'</span><span class="s1">]</span><span class="s6">,</span><span class="s1"> 
+<a name="l1106"><span class="ln">1106 </span></a>                departing=flights[</span><span class="s3">'departureTime'</span><span class="s1">]</span><span class="s6">,</span><span class="s1"> 
+<a name="l1107"><span class="ln">1107 </span></a>                arriving=flights[</span><span class="s3">'arrivalTime'</span><span class="s1">] 
+<a name="l1108"><span class="ln">1108 </span></a>            ) 
+<a name="l1109"><span class="ln">1109 </span></a>        </span><span class="s2">except</span><span class="s1">: 
+<a name="l1110"><span class="ln">1110 </span></a>            </span><span class="s2">return </span><span class="s1">True 
+<a name="l1111"><span class="ln">1111 </span></a> 
+<a name="l1112"><span class="ln">1112 </span></a>    </span><span class="s2">def </span><span class="s1">is_current(self): 
+<a name="l1113"><span class="ln">1113 </span></a>        arrival_date = self.flight_matrix[</span><span class="s3">'arrival_times'</span><span class="s1">][</span><span class="s4">0</span><span class="s1">].split(</span><span class="s3">'T'</span><span class="s1">)[</span><span class="s4">0</span><span class="s1">] 
+<a name="l1114"><span class="ln">1114 </span></a>        arrival_date = datetime.datetime.strptime(arrival_date</span><span class="s6">, </span><span class="s3">&quot;%Y-%m-%d&quot;</span><span class="s1">) 
+<a name="l1115"><span class="ln">1115 </span></a> 
+<a name="l1116"><span class="ln">1116 </span></a>        </span><span class="s2">if not </span><span class="s1">self.quote: 
+<a name="l1117"><span class="ln">1117 </span></a>            pickup_datetime = self.order.pickup_time 
+<a name="l1118"><span class="ln">1118 </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l1119"><span class="ln">1119 </span></a>            pickup_datetime = self.pickup_datetime 
+<a name="l1120"><span class="ln">1120 </span></a> 
+<a name="l1121"><span class="ln">1121 </span></a>        </span><span class="s2">if </span><span class="s1">arrival_date.date() &gt;= pickup_datetime.date(): 
+<a name="l1122"><span class="ln">1122 </span></a>            </span><span class="s2">return </span><span class="s1">True 
+<a name="l1123"><span class="ln">1123 </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l1124"><span class="ln">1124 </span></a>            </span><span class="s2">return </span><span class="s1">False 
+<a name="l1125"><span class="ln">1125 </span></a> 
+<a name="l1126"><span class="ln">1126 </span></a>    </span><span class="s0">#sets delivery time for flights</span><span class="s1"> 
+<a name="l1127"><span class="ln">1127 </span></a>    </span><span class="s2">def </span><span class="s1">set_delivery_datetime(self</span><span class="s6">, </span><span class="s1">flights</span><span class="s6">, </span><span class="s1">leg2): 
+<a name="l1128"><span class="ln">1128 </span></a> 
+<a name="l1129"><span class="ln">1129 </span></a>        </span><span class="s0">#flight arrival time + distance to get from AP to dest</span><span class="s1"> 
+<a name="l1130"><span class="ln">1130 </span></a>        dropoff_time = datetime.datetime.strptime(flights[</span><span class="s3">'arrivalTime'</span><span class="s1">].split(</span><span class="s3">'T'</span><span class="s1">)[</span><span class="s4">1</span><span class="s1">][:</span><span class="s4">8</span><span class="s1">]</span><span class="s6">, </span><span class="s3">&quot;%H:%M:%S&quot;</span><span class="s1">) + \ 
+<a name="l1131"><span class="ln">1131 </span></a>                       datetime.timedelta(minutes=int(self.compute_time(leg2))) 
+<a name="l1132"><span class="ln">1132 </span></a> 
+<a name="l1133"><span class="ln">1133 </span></a>        dropoff_date = datetime.datetime.strptime(flights[</span><span class="s3">'arrivalTime'</span><span class="s1">].split(</span><span class="s3">'T'</span><span class="s1">)[</span><span class="s4">0</span><span class="s1">]</span><span class="s6">, </span><span class="s3">&quot;%Y-%m-%d&quot;</span><span class="s1">) 
+<a name="l1134"><span class="ln">1134 </span></a> 
+<a name="l1135"><span class="ln">1135 </span></a>        </span><span class="s0">#combine into datetime</span><span class="s1"> 
+<a name="l1136"><span class="ln">1136 </span></a>        dropoff_datetime = datetime.datetime.combine(dropoff_date.date()</span><span class="s6">, </span><span class="s1">dropoff_time.time()) 
+<a name="l1137"><span class="ln">1137 </span></a> 
+<a name="l1138"><span class="ln">1138 </span></a>        </span><span class="s2">if not </span><span class="s1">self.quote: 
+<a name="l1139"><span class="ln">1139 </span></a>            self.order.update_record(delivery_time=dropoff_datetime) 
+<a name="l1140"><span class="ln">1140 </span></a>            self.delivery_datetime_final = self.order.delivery_time 
+<a name="l1141"><span class="ln">1141 </span></a>            </span><span class="s0">#self.order.delivery_time = dropoff_datetime</span><span class="s1"> 
+<a name="l1142"><span class="ln">1142 </span></a>            </span><span class="s0">#self.order.update_record(delivery_time=dropoff_datetime)</span><span class="s1"> 
+<a name="l1143"><span class="ln">1143 </span></a>            </span><span class="s0">#current.session.dropoff_datetime = dropoff_datetime</span><span class="s1"> 
+<a name="l1144"><span class="ln">1144 </span></a>            current.mc.set(</span><span class="s3">'flight_class'</span><span class="s6">,</span><span class="s1">self) 
+<a name="l1145"><span class="ln">1145 </span></a>            a = </span><span class="s3">''</span><span class="s1"> 
+<a name="l1146"><span class="ln">1146 </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l1147"><span class="ln">1147 </span></a>            self.delivery_datetime = dropoff_datetime 
+<a name="l1148"><span class="ln">1148 </span></a> 
+<a name="l1149"><span class="ln">1149 </span></a> 
+<a name="l1150"><span class="ln">1150 </span></a>    </span><span class="s2">def </span><span class="s1">set_flight(self</span><span class="s6">, </span><span class="s1">mode): 
+<a name="l1151"><span class="ln">1151 </span></a> 
+<a name="l1152"><span class="ln">1152 </span></a>        </span><span class="s2">if </span><span class="s1">mode == </span><span class="s3">'fastest'</span><span class="s1">: 
+<a name="l1153"><span class="ln">1153 </span></a>            min_index = self.flight_matrix[</span><span class="s3">&quot;arrival_times&quot;</span><span class="s1">].index(min(self.flight_matrix[</span><span class="s3">&quot;arrival_times&quot;</span><span class="s1">])) 
+<a name="l1154"><span class="ln">1154 </span></a>        </span><span class="s2">elif </span><span class="s1">mode == </span><span class="s3">'cheapest'</span><span class="s1">: 
+<a name="l1155"><span class="ln">1155 </span></a>            min_index = self.flight_matrix[</span><span class="s3">&quot;total_prices&quot;</span><span class="s1">].index(min(self.flight_matrix[</span><span class="s3">&quot;total_prices&quot;</span><span class="s1">])) 
+<a name="l1156"><span class="ln">1156 </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l1157"><span class="ln">1157 </span></a>            </span><span class="s2">return </span><span class="s1">None 
+<a name="l1158"><span class="ln">1158 </span></a> 
+<a name="l1159"><span class="ln">1159 </span></a>        flights = self.flight_matrix[</span><span class="s3">&quot;flights&quot;</span><span class="s1">][min_index] 
+<a name="l1160"><span class="ln">1160 </span></a>        total_prices = self.flight_matrix[</span><span class="s3">&quot;total_prices&quot;</span><span class="s1">][min_index] 
+<a name="l1161"><span class="ln">1161 </span></a>        leg2 = self.flight_matrix[</span><span class="s3">&quot;leg2&quot;</span><span class="s1">][min_index] 
+<a name="l1162"><span class="ln">1162 </span></a> 
+<a name="l1163"><span class="ln">1163 </span></a>        </span><span class="s2">if not </span><span class="s1">self.quote: 
+<a name="l1164"><span class="ln">1164 </span></a>            self.set_flight_info(flights)  </span><span class="s0">#update current.db.flight_info</span><span class="s1"> 
+<a name="l1165"><span class="ln">1165 </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l1166"><span class="ln">1166 </span></a>            self.flight = flights 
+<a name="l1167"><span class="ln">1167 </span></a> 
+<a name="l1168"><span class="ln">1168 </span></a>        self.set_amount(total_prices)  </span><span class="s0">#set order amount</span><span class="s1"> 
+<a name="l1169"><span class="ln">1169 </span></a>        self.set_delivery_datetime(flights</span><span class="s6">, </span><span class="s1">leg2)  </span><span class="s0">#set order delivery datetime</span><span class="s1"> 
+<a name="l1170"><span class="ln">1170 </span></a> 
+<a name="l1171"><span class="ln">1171 </span></a>        </span><span class="s2">return </span><span class="s1">True 
+<a name="l1172"><span class="ln">1172 </span></a> 
+<a name="l1173"><span class="ln">1173 </span></a> 
+<a name="l1174"><span class="ln">1174 </span></a>    </span><span class="s0"># calculate price to send air cargo</span><span class="s1"> 
+<a name="l1175"><span class="ln">1175 </span></a>    </span><span class="s0"># input: weight in lbs</span><span class="s1"> 
+<a name="l1176"><span class="ln">1176 </span></a>    </span><span class="s0"># output: price in dollars</span><span class="s1"> 
+<a name="l1177"><span class="ln">1177 </span></a>    </span><span class="s2">def </span><span class="s1">airline_quote(self): 
+<a name="l1178"><span class="ln">1178 </span></a>        base_fee = </span><span class="s4">0</span><span class="s1"> 
+<a name="l1179"><span class="ln">1179 </span></a>        security_fee = </span><span class="s4">5.00</span><span class="s1"> 
+<a name="l1180"><span class="ln">1180 </span></a>        fuel_surcharge = </span><span class="s4">.43</span><span class="s1"> 
+<a name="l1181"><span class="ln">1181 </span></a>        exise_tax = </span><span class="s4">.06</span><span class="s1"> 
+<a name="l1182"><span class="ln">1182 </span></a>        weight = self.total_weight() 
+<a name="l1183"><span class="ln">1183 </span></a> 
+<a name="l1184"><span class="ln">1184 </span></a>        </span><span class="s2">if </span><span class="s1">weight &lt;= </span><span class="s4">20.00</span><span class="s1">: 
+<a name="l1185"><span class="ln">1185 </span></a>            base_fee = </span><span class="s4">71.00</span><span class="s1"> 
+<a name="l1186"><span class="ln">1186 </span></a>        </span><span class="s2">elif </span><span class="s4">20.00 </span><span class="s1">&lt; weight &lt;= </span><span class="s4">50.00</span><span class="s1">: 
+<a name="l1187"><span class="ln">1187 </span></a>            base_fee = </span><span class="s4">76.00</span><span class="s1"> 
+<a name="l1188"><span class="ln">1188 </span></a>        </span><span class="s2">elif </span><span class="s4">50.00 </span><span class="s1">&lt; weight &lt;= </span><span class="s4">70.00</span><span class="s1">: 
+<a name="l1189"><span class="ln">1189 </span></a>            base_fee = </span><span class="s4">93.00</span><span class="s1"> 
+<a name="l1190"><span class="ln">1190 </span></a>        </span><span class="s2">elif </span><span class="s4">70.00 </span><span class="s1">&lt; weight &lt;= </span><span class="s4">100.00</span><span class="s1">: 
+<a name="l1191"><span class="ln">1191 </span></a>            base_fee = </span><span class="s4">135.00</span><span class="s1"> 
+<a name="l1192"><span class="ln">1192 </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l1193"><span class="ln">1193 </span></a>            None 
+<a name="l1194"><span class="ln">1194 </span></a>            </span><span class="s0">#if package is over 100 lbs, must ship using dash heavy</span><span class="s1"> 
+<a name="l1195"><span class="ln">1195 </span></a> 
+<a name="l1196"><span class="ln">1196 </span></a>        price = (base_fee * exise_tax) + (fuel_surcharge * weight) + security_fee + base_fee 
+<a name="l1197"><span class="ln">1197 </span></a>        </span><span class="s2">return </span><span class="s1">price 
+<a name="l1198"><span class="ln">1198 </span></a> 
+<a name="l1199"><span class="ln">1199 </span></a> 
+<a name="l1200"><span class="ln">1200 </span></a>    </span><span class="s0"># returns list of airports within radius of lat, lng</span><span class="s1"> 
+<a name="l1201"><span class="ln">1201 </span></a>    </span><span class="s2">def </span><span class="s1">choose_airport(self</span><span class="s6">, </span><span class="s1">segment): 
+<a name="l1202"><span class="ln">1202 </span></a> 
+<a name="l1203"><span class="ln">1203 </span></a>        sensitivity = self.sensitivity 
+<a name="l1204"><span class="ln">1204 </span></a>        </span><span class="s2">if </span><span class="s1">segment == </span><span class="s3">&quot;origin&quot;</span><span class="s1">: 
+<a name="l1205"><span class="ln">1205 </span></a>            lat = self.origin_latlng[</span><span class="s3">'lat'</span><span class="s1">] 
+<a name="l1206"><span class="ln">1206 </span></a>            lng = self.origin_latlng[</span><span class="s3">'lng'</span><span class="s1">] 
+<a name="l1207"><span class="ln">1207 </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l1208"><span class="ln">1208 </span></a>            lat = self.destination_latlng[</span><span class="s3">'lat'</span><span class="s1">] 
+<a name="l1209"><span class="ln">1209 </span></a>            lng = self.destination_latlng[</span><span class="s3">'lng'</span><span class="s1">] 
+<a name="l1210"><span class="ln">1210 </span></a> 
+<a name="l1211"><span class="ln">1211 </span></a>        </span><span class="s2">if </span><span class="s1">sensitivity == </span><span class="s4">1</span><span class="s1">: 
+<a name="l1212"><span class="ln">1212 </span></a>            radius = </span><span class="s4">20</span><span class="s1"> 
+<a name="l1213"><span class="ln">1213 </span></a>        </span><span class="s2">elif </span><span class="s1">sensitivity == </span><span class="s4">2</span><span class="s1">: 
+<a name="l1214"><span class="ln">1214 </span></a>            radius = </span><span class="s4">90</span><span class="s1"> 
+<a name="l1215"><span class="ln">1215 </span></a>        </span><span class="s2">elif </span><span class="s1">sensitivity == </span><span class="s4">3</span><span class="s1">: 
+<a name="l1216"><span class="ln">1216 </span></a>            radius = </span><span class="s4">180</span><span class="s1"> 
+<a name="l1217"><span class="ln">1217 </span></a>        </span><span class="s2">elif </span><span class="s1">sensitivity == </span><span class="s4">4</span><span class="s1">: 
+<a name="l1218"><span class="ln">1218 </span></a>            radius = </span><span class="s4">300</span><span class="s1"> 
+<a name="l1219"><span class="ln">1219 </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l1220"><span class="ln">1220 </span></a>            radius = </span><span class="s4">500</span><span class="s1"> 
+<a name="l1221"><span class="ln">1221 </span></a> 
+<a name="l1222"><span class="ln">1222 </span></a>        url = </span><span class="s3">'https://api.flightstats.com/flex/airports/rest/v1/json/withinRadius/' </span><span class="s1">+ str(lng) + </span><span class="s3">'/' </span><span class="s1">+ str( 
+<a name="l1223"><span class="ln">1223 </span></a>            lat) + </span><span class="s3">'/' </span><span class="s1">+ str(radius) + </span><span class="s3">'?appId=' </span><span class="s1">+ self.flightstats_id + </span><span class="s3">'&amp;appKey=' </span><span class="s1">+ self.flightstats_key 
+<a name="l1224"><span class="ln">1224 </span></a> 
+<a name="l1225"><span class="ln">1225 </span></a>        json_data = urllib2.urlopen(url).read() 
+<a name="l1226"><span class="ln">1226 </span></a>        json_airports = json.loads(json_data) 
+<a name="l1227"><span class="ln">1227 </span></a> 
+<a name="l1228"><span class="ln">1228 </span></a>        airports = [] 
+<a name="l1229"><span class="ln">1229 </span></a>        i = </span><span class="s4">0  </span><span class="s0">#i=number of airports to attach</span><span class="s1"> 
+<a name="l1230"><span class="ln">1230 </span></a>        </span><span class="s2">for </span><span class="s1">airport </span><span class="s2">in </span><span class="s1">json_airports[</span><span class="s3">'airports'</span><span class="s1">]: 
+<a name="l1231"><span class="ln">1231 </span></a>            </span><span class="s2">if </span><span class="s1">sensitivity == </span><span class="s3">'1'</span><span class="s1">: 
+<a name="l1232"><span class="ln">1232 </span></a>                </span><span class="s2">if </span><span class="s1">int(airport[</span><span class="s3">'classification'</span><span class="s1">]) &lt;= </span><span class="s4">1 </span><span class="s2">and </span><span class="s1">i &lt; </span><span class="s4">2</span><span class="s1">: 
+<a name="l1233"><span class="ln">1233 </span></a>                    airports.append(airport) 
+<a name="l1234"><span class="ln">1234 </span></a>                    i += </span><span class="s4">1</span><span class="s1"> 
+<a name="l1235"><span class="ln">1235 </span></a>            </span><span class="s2">elif </span><span class="s1">sensitivity == </span><span class="s3">'2'</span><span class="s1">: 
+<a name="l1236"><span class="ln">1236 </span></a>                </span><span class="s2">if </span><span class="s1">int(airport[</span><span class="s3">'classification'</span><span class="s1">]) &lt;= </span><span class="s4">2 </span><span class="s2">and </span><span class="s1">i &lt; </span><span class="s4">2</span><span class="s1">: 
+<a name="l1237"><span class="ln">1237 </span></a>                    airports.append(airport) 
+<a name="l1238"><span class="ln">1238 </span></a>                    i += </span><span class="s4">1</span><span class="s1"> 
+<a name="l1239"><span class="ln">1239 </span></a>            </span><span class="s2">elif </span><span class="s1">sensitivity == </span><span class="s3">'3'</span><span class="s1">: 
+<a name="l1240"><span class="ln">1240 </span></a>                </span><span class="s2">if </span><span class="s1">int(airport[</span><span class="s3">'classification'</span><span class="s1">]) &lt;= </span><span class="s4">2 </span><span class="s2">and </span><span class="s1">i &lt; </span><span class="s4">3</span><span class="s1">: 
+<a name="l1241"><span class="ln">1241 </span></a>                    airports.append(airport) 
+<a name="l1242"><span class="ln">1242 </span></a>                    i += </span><span class="s4">1</span><span class="s1"> 
+<a name="l1243"><span class="ln">1243 </span></a>            </span><span class="s2">elif </span><span class="s1">sensitivity == </span><span class="s3">'4'</span><span class="s1">: 
+<a name="l1244"><span class="ln">1244 </span></a>                </span><span class="s2">if </span><span class="s1">int(airport[</span><span class="s3">'classification'</span><span class="s1">]) &lt;= </span><span class="s4">2 </span><span class="s2">and </span><span class="s1">i &lt; </span><span class="s4">5</span><span class="s1">: 
+<a name="l1245"><span class="ln">1245 </span></a>                    airports.append(airport) 
+<a name="l1246"><span class="ln">1246 </span></a>                    i += </span><span class="s4">1</span><span class="s1"> 
+<a name="l1247"><span class="ln">1247 </span></a>            </span><span class="s2">else</span><span class="s1">: 
+<a name="l1248"><span class="ln">1248 </span></a>                </span><span class="s2">if </span><span class="s1">int(airport[</span><span class="s3">'classification'</span><span class="s1">]) &lt;= </span><span class="s4">3 </span><span class="s2">and </span><span class="s1">i &lt; </span><span class="s4">5</span><span class="s1">: 
+<a name="l1249"><span class="ln">1249 </span></a>                    airports.append(airport) 
+<a name="l1250"><span class="ln">1250 </span></a>                    i += </span><span class="s4">1</span><span class="s1"> 
+<a name="l1251"><span class="ln">1251 </span></a>        </span><span class="s2">return </span><span class="s1">dict(airport=airports) 
+<a name="l1252"><span class="ln">1252 </span></a> 
+<a name="l1253"><span class="ln">1253 </span></a> 
+<a name="l1254"><span class="ln">1254 </span></a>    </span><span class="s0">#input: lat, lng, radius</span><span class="s1"> 
+<a name="l1255"><span class="ln">1255 </span></a>    </span><span class="s0">#output: list of airports</span><span class="s1"> 
+<a name="l1256"><span class="ln">1256 </span></a>    </span><span class="s2">def </span><span class="s1">get_airports(self</span><span class="s6">, </span><span class="s1">Lat</span><span class="s6">, </span><span class="s1">Lng</span><span class="s6">, </span><span class="s1">sensitivity): 
+<a name="l1257"><span class="ln">1257 </span></a> 
+<a name="l1258"><span class="ln">1258 </span></a>        lat = Lat  </span><span class="s0">#request.args[1] #37.7833</span><span class="s1"> 
+<a name="l1259"><span class="ln">1259 </span></a>        lng = Lng  </span><span class="s0">#request.args[0] #-122.4167</span><span class="s1"> 
+<a name="l1260"><span class="ln">1260 </span></a> 
+<a name="l1261"><span class="ln">1261 </span></a>        </span><span class="s2">if </span><span class="s1">sensitivity == </span><span class="s3">'1'</span><span class="s1">: 
+<a name="l1262"><span class="ln">1262 </span></a>            radius = </span><span class="s4">20</span><span class="s1"> 
+<a name="l1263"><span class="ln">1263 </span></a>        </span><span class="s2">elif </span><span class="s1">sensitivity == </span><span class="s3">'2'</span><span class="s1">: 
+<a name="l1264"><span class="ln">1264 </span></a>            radius = </span><span class="s4">90</span><span class="s1"> 
+<a name="l1265"><span class="ln">1265 </span></a>        </span><span class="s2">elif </span><span class="s1">sensitivity == </span><span class="s3">'3'</span><span class="s1">: 
+<a name="l1266"><span class="ln">1266 </span></a>            radius = </span><span class="s4">180</span><span class="s1"> 
+<a name="l1267"><span class="ln">1267 </span></a>        </span><span class="s2">elif </span><span class="s1">sensitivity == </span><span class="s3">'4'</span><span class="s1">: 
+<a name="l1268"><span class="ln">1268 </span></a>            radius = </span><span class="s4">300</span><span class="s1"> 
+<a name="l1269"><span class="ln">1269 </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l1270"><span class="ln">1270 </span></a>            radius = </span><span class="s4">500</span><span class="s1"> 
+<a name="l1271"><span class="ln">1271 </span></a> 
+<a name="l1272"><span class="ln">1272 </span></a>        url = </span><span class="s3">'https://api.flightstats.com/flex/airports/rest/v1/json/withinRadius/' </span><span class="s1">+ str(lng) + </span><span class="s3">'/' </span><span class="s1">+ str( 
+<a name="l1273"><span class="ln">1273 </span></a>            lat) + </span><span class="s3">'/' </span><span class="s1">+ str(radius) + </span><span class="s3">'?appId=47c14783&amp;appKey=432be7f372adf6d5eff1d894767d4036'</span><span class="s1"> 
+<a name="l1274"><span class="ln">1274 </span></a> 
+<a name="l1275"><span class="ln">1275 </span></a>        json_data = urllib2.urlopen(url).read() 
+<a name="l1276"><span class="ln">1276 </span></a>        json_airports = json.loads(json_data) 
+<a name="l1277"><span class="ln">1277 </span></a> 
+<a name="l1278"><span class="ln">1278 </span></a>        airports = [] 
+<a name="l1279"><span class="ln">1279 </span></a>        i = </span><span class="s4">0  </span><span class="s0">#i=number of airports to attach</span><span class="s1"> 
+<a name="l1280"><span class="ln">1280 </span></a>        </span><span class="s2">for </span><span class="s1">airport </span><span class="s2">in </span><span class="s1">json_airports[</span><span class="s3">'airports'</span><span class="s1">]: 
+<a name="l1281"><span class="ln">1281 </span></a>            </span><span class="s2">if </span><span class="s1">sensitivity == </span><span class="s3">'1'</span><span class="s1">: 
+<a name="l1282"><span class="ln">1282 </span></a>                </span><span class="s2">if </span><span class="s1">int(airport[</span><span class="s3">'classification'</span><span class="s1">]) &lt;= </span><span class="s4">1 </span><span class="s2">and </span><span class="s1">i &lt; </span><span class="s4">2</span><span class="s1">: 
+<a name="l1283"><span class="ln">1283 </span></a>                    airports.append(airport) 
+<a name="l1284"><span class="ln">1284 </span></a>                    i += </span><span class="s4">1</span><span class="s1"> 
+<a name="l1285"><span class="ln">1285 </span></a>            </span><span class="s2">elif </span><span class="s1">sensitivity == </span><span class="s3">'2'</span><span class="s1">: 
+<a name="l1286"><span class="ln">1286 </span></a>                </span><span class="s2">if </span><span class="s1">int(airport[</span><span class="s3">'classification'</span><span class="s1">]) &lt;= </span><span class="s4">2 </span><span class="s2">and </span><span class="s1">i &lt; </span><span class="s4">2</span><span class="s1">: 
+<a name="l1287"><span class="ln">1287 </span></a>                    airports.append(airport) 
+<a name="l1288"><span class="ln">1288 </span></a>                    i += </span><span class="s4">1</span><span class="s1"> 
+<a name="l1289"><span class="ln">1289 </span></a>            </span><span class="s2">elif </span><span class="s1">sensitivity == </span><span class="s3">'3'</span><span class="s1">: 
+<a name="l1290"><span class="ln">1290 </span></a>                </span><span class="s2">if </span><span class="s1">int(airport[</span><span class="s3">'classification'</span><span class="s1">]) &lt;= </span><span class="s4">2 </span><span class="s2">and </span><span class="s1">i &lt; </span><span class="s4">3</span><span class="s1">: 
+<a name="l1291"><span class="ln">1291 </span></a>                    airports.append(airport) 
+<a name="l1292"><span class="ln">1292 </span></a>                    i += </span><span class="s4">1</span><span class="s1"> 
+<a name="l1293"><span class="ln">1293 </span></a>            </span><span class="s2">elif </span><span class="s1">sensitivity == </span><span class="s3">'4'</span><span class="s1">: 
+<a name="l1294"><span class="ln">1294 </span></a>                </span><span class="s2">if </span><span class="s1">int(airport[</span><span class="s3">'classification'</span><span class="s1">]) &lt;= </span><span class="s4">2 </span><span class="s2">and </span><span class="s1">i &lt; </span><span class="s4">5</span><span class="s1">: 
+<a name="l1295"><span class="ln">1295 </span></a>                    airports.append(airport) 
+<a name="l1296"><span class="ln">1296 </span></a>                    i += </span><span class="s4">1</span><span class="s1"> 
+<a name="l1297"><span class="ln">1297 </span></a>            </span><span class="s2">else</span><span class="s1">: 
+<a name="l1298"><span class="ln">1298 </span></a>                </span><span class="s2">if </span><span class="s1">int(airport[</span><span class="s3">'classification'</span><span class="s1">]) &lt;= </span><span class="s4">3 </span><span class="s2">and </span><span class="s1">i &lt; </span><span class="s4">5</span><span class="s1">: 
+<a name="l1299"><span class="ln">1299 </span></a>                    airports.append(airport) 
+<a name="l1300"><span class="ln">1300 </span></a>                    i += </span><span class="s4">1</span><span class="s1"> 
+<a name="l1301"><span class="ln">1301 </span></a>        </span><span class="s2">return </span><span class="s1">dict(airports=airports) 
+<a name="l1302"><span class="ln">1302 </span></a> 
+<a name="l1303"><span class="ln">1303 </span></a>    </span><span class="s0"># rough estimate of time necessary to deliver package via car</span><span class="s1"> 
+<a name="l1304"><span class="ln">1304 </span></a>    </span><span class="s0"># should use gmaps api in future to account for traffic</span><span class="s1"> 
+<a name="l1305"><span class="ln">1305 </span></a>    </span><span class="s0"># input: distance in miles</span><span class="s1"> 
+<a name="l1306"><span class="ln">1306 </span></a>    </span><span class="s0"># output: time in minutes</span><span class="s1"> 
+<a name="l1307"><span class="ln">1307 </span></a>    </span><span class="s2">def </span><span class="s1">compute_time(self</span><span class="s6">, </span><span class="s1">distance): 
+<a name="l1308"><span class="ln">1308 </span></a>        distance = float(distance) 
+<a name="l1309"><span class="ln">1309 </span></a> 
+<a name="l1310"><span class="ln">1310 </span></a>        </span><span class="s2">if </span><span class="s1">distance &lt;= float(</span><span class="s4">20</span><span class="s1">): 
+<a name="l1311"><span class="ln">1311 </span></a>            total_time = </span><span class="s4">60</span><span class="s1"> 
+<a name="l1312"><span class="ln">1312 </span></a>        </span><span class="s2">elif </span><span class="s1">distance &gt; float(</span><span class="s4">20</span><span class="s1">) </span><span class="s2">and </span><span class="s1">distance &lt;= float(</span><span class="s4">50</span><span class="s1">): 
+<a name="l1313"><span class="ln">1313 </span></a>            total_time = </span><span class="s4">90</span><span class="s1"> 
+<a name="l1314"><span class="ln">1314 </span></a>        </span><span class="s2">elif </span><span class="s1">distance &gt; float(</span><span class="s4">50</span><span class="s1">): 
+<a name="l1315"><span class="ln">1315 </span></a>            total_time = distance * float(</span><span class="s4">1.2</span><span class="s1">) 
+<a name="l1316"><span class="ln">1316 </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l1317"><span class="ln">1317 </span></a>            total_time = None 
+<a name="l1318"><span class="ln">1318 </span></a> 
+<a name="l1319"><span class="ln">1319 </span></a>        </span><span class="s2">return </span><span class="s1">total_time 
+<a name="l1320"><span class="ln">1320 </span></a> 
+<a name="l1321"><span class="ln">1321 </span></a>    </span><span class="s0">#input: string date from flightstats</span><span class="s1"> 
+<a name="l1322"><span class="ln">1322 </span></a>    </span><span class="s0">#output: formatted time stamp</span><span class="s1"> 
+<a name="l1323"><span class="ln">1323 </span></a>    </span><span class="s2">def </span><span class="s1">clean_time(self</span><span class="s6">, </span><span class="s1">flight): 
+<a name="l1324"><span class="ln">1324 </span></a>        departure_time = flight[</span><span class="s3">'departureTime'</span><span class="s1">].split(</span><span class="s3">'T'</span><span class="s1">)[</span><span class="s4">1</span><span class="s1">].split(</span><span class="s3">':'</span><span class="s1">) 
+<a name="l1325"><span class="ln">1325 </span></a>        departure_date = datetime.datetime.strptime(flight[</span><span class="s3">'departureTime'</span><span class="s1">].split(</span><span class="s3">'T'</span><span class="s1">)[</span><span class="s4">0</span><span class="s1">]</span><span class="s6">, </span><span class="s3">'%Y-%m-%d'</span><span class="s1">) 
+<a name="l1326"><span class="ln">1326 </span></a>        departure = datetime.datetime.strptime(departure_time[</span><span class="s4">2</span><span class="s1">].split(</span><span class="s3">'.'</span><span class="s1">)[</span><span class="s4">0</span><span class="s1">] + departure_time[</span><span class="s4">1</span><span class="s1">] + departure_time[</span><span class="s4">0</span><span class="s1">]</span><span class="s6">,</span><span class="s1"> 
+<a name="l1327"><span class="ln">1327 </span></a>                                               </span><span class="s3">&quot;%S%M%H&quot;</span><span class="s1">) 
+<a name="l1328"><span class="ln">1328 </span></a>        </span><span class="s2">return </span><span class="s1">datetime.datetime.combine(departure_date</span><span class="s6">, </span><span class="s1">departure.time()) 
+<a name="l1329"><span class="ln">1329 </span></a> 
+<a name="l1330"><span class="ln">1330 </span></a>    </span><span class="s2">def </span><span class="s1">preferred_airline(self</span><span class="s6">, </span><span class="s1">flight): 
+<a name="l1331"><span class="ln">1331 </span></a>        </span><span class="s2">if </span><span class="s1">flight[</span><span class="s3">'carrierFsCode'</span><span class="s1">] == </span><span class="s3">'WN'</span><span class="s1">: 
+<a name="l1332"><span class="ln">1332 </span></a>            </span><span class="s2">return </span><span class="s1">True 
+<a name="l1333"><span class="ln">1333 </span></a>        </span><span class="s2">elif </span><span class="s1">flight[</span><span class="s3">'carrierFsCode'</span><span class="s1">] == </span><span class="s3">'AA'</span><span class="s1">: 
+<a name="l1334"><span class="ln">1334 </span></a>            </span><span class="s2">return </span><span class="s1">True 
+<a name="l1335"><span class="ln">1335 </span></a>        </span><span class="s2">elif </span><span class="s1">flight[</span><span class="s3">'carrierFsCode'</span><span class="s1">] == </span><span class="s3">'UA'</span><span class="s1">: 
+<a name="l1336"><span class="ln">1336 </span></a>            </span><span class="s2">return </span><span class="s1">True 
+<a name="l1337"><span class="ln">1337 </span></a>        </span><span class="s2">else</span><span class="s1">: 
+<a name="l1338"><span class="ln">1338 </span></a>            </span><span class="s2">return </span><span class="s1">False 
+<a name="l1339"><span class="ln">1339 </span></a> 
+<a name="l1340"><span class="ln">1340 </span></a>    </span><span class="s0">#input: origin, destination, departure ceiling</span><span class="s1"> 
+<a name="l1341"><span class="ln">1341 </span></a>    </span><span class="s0">#output: list of times, airport codes meeting fn parameters</span><span class="s1"> 
+<a name="l1342"><span class="ln">1342 </span></a>    </span><span class="s2">def </span><span class="s1">get_flights(self</span><span class="s6">, </span><span class="s1">origin</span><span class="s6">, </span><span class="s1">destination</span><span class="s6">, </span><span class="s1">ceil): 
+<a name="l1343"><span class="ln">1343 </span></a> 
+<a name="l1344"><span class="ln">1344 </span></a>        split_date = str(ceil.date()).split(</span><span class="s3">'-'</span><span class="s1">) 
+<a name="l1345"><span class="ln">1345 </span></a>        origin = origin 
+<a name="l1346"><span class="ln">1346 </span></a>        dest = destination 
+<a name="l1347"><span class="ln">1347 </span></a>        year = split_date[</span><span class="s4">0</span><span class="s1">] 
+<a name="l1348"><span class="ln">1348 </span></a>        month = split_date[</span><span class="s4">1</span><span class="s1">] 
+<a name="l1349"><span class="ln">1349 </span></a>        day = split_date[</span><span class="s4">2</span><span class="s1">] 
+<a name="l1350"><span class="ln">1350 </span></a>        </span><span class="s3">''' 
+<a name="l1351"><span class="ln">1351 </span></a>        #use this to get extended response from flightstats which includes timezone and other things 
+<a name="l1352"><span class="ln">1352 </span></a>        url_extended = 'https://api.flightstats.com/flex/schedules/rest/v1/json/from/'+origin+'/to/'+dest+'/departing/'+year+'/'+month'/'+day+'?appId=47c147383&amp;appKey=432be7f372adf6d5eff1d894767d4036&amp;extendedOptions=useInlinedReferences' 
+<a name="l1353"><span class="ln">1353 </span></a>        json_data_extended = urllib2.urlopen(url_extended).read() 
+<a name="l1354"><span class="ln">1354 </span></a>        flights_extended = json.loads(json_data_extended) 
+<a name="l1355"><span class="ln">1355 </span></a>        flights_extended = flights_extended['scheduledFlights'] '''</span><span class="s1"> 
+<a name="l1356"><span class="ln">1356 </span></a> 
+<a name="l1357"><span class="ln">1357 </span></a>        url = </span><span class="s3">'https://api.flightstats.com/flex/schedules/rest/v1/json/from/' </span><span class="s1">+ \ 
+<a name="l1358"><span class="ln">1358 </span></a>              origin + </span><span class="s3">'/to/' </span><span class="s1">+ dest + </span><span class="s3">'/departing/' </span><span class="s1">+ year + </span><span class="s3">'/' </span><span class="s1">+ month + </span><span class="s3">'/' </span><span class="s1">+ day + \ 
+<a name="l1359"><span class="ln">1359 </span></a>              </span><span class="s3">'?appId=' </span><span class="s1">+ self.flightstats_id + </span><span class="s3">'&amp;appKey=' </span><span class="s1">+ self.flightstats_key 
+<a name="l1360"><span class="ln">1360 </span></a> 
+<a name="l1361"><span class="ln">1361 </span></a>        json_data = urllib2.urlopen(url).read() 
+<a name="l1362"><span class="ln">1362 </span></a>        flights = json.loads(json_data) 
+<a name="l1363"><span class="ln">1363 </span></a>        flights = flights[</span><span class="s3">'scheduledFlights'</span><span class="s1">] 
+<a name="l1364"><span class="ln">1364 </span></a>        times = [] 
+<a name="l1365"><span class="ln">1365 </span></a> 
+<a name="l1366"><span class="ln">1366 </span></a>        </span><span class="s2">for </span><span class="s1">flight </span><span class="s2">in </span><span class="s1">flights: 
+<a name="l1367"><span class="ln">1367 </span></a>            departure = self.clean_time(flight) 
+<a name="l1368"><span class="ln">1368 </span></a>            preferred = self.preferred_airline(flight) 
+<a name="l1369"><span class="ln">1369 </span></a>            </span><span class="s2">if </span><span class="s1">departure &gt; ceil </span><span class="s2">and </span><span class="s1">preferred == True: 
+<a name="l1370"><span class="ln">1370 </span></a>                times.append(flight) 
+<a name="l1371"><span class="ln">1371 </span></a> 
+<a name="l1372"><span class="ln">1372 </span></a>        </span><span class="s2">return </span><span class="s1">times 
+<a name="l1373"><span class="ln">1373 </span></a></span></pre>
+</body>
+</html>
